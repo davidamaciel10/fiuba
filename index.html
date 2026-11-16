@@ -1,0 +1,735 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Repaso ITMU TA066</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;700;800&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: mapa de red tipo subte a la izquierda (módulos = estaciones), contenido a la derecha; en celular la línea pasa arriba como chips horizontales */
+:root{
+  --bg:#f5f7f8; --panel:#ffffff; --fg:#14212b; --muted:#5a6b78; --line:#d8e0e5;
+  --accent:#0b6e8a; --accent-soft:#dff0f5; --ok:#1f8a4c; --ok-soft:#e1f4e8; --bad:#b4372f; --bad-soft:#fbe6e4; --warn:#a96a00; --warn-soft:#fdf1d9;
+  --f-display:"Archivo", "Helvetica Neue", Arial, sans-serif;
+  --f-body:"IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --f-mono:"IBM Plex Mono", ui-monospace, Menlo, monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0f171d; --panel:#16222a; --fg:#e4edf2; --muted:#93a6b3; --line:#29383f;
+  --accent:#4fb8d6; --accent-soft:#163541; --ok:#5fcf8c; --ok-soft:#173326; --bad:#ef8278; --bad-soft:#3a1e1c; --warn:#e9b04d; --warn-soft:#3a2c12; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0f171d; --panel:#16222a; --fg:#e4edf2; --muted:#93a6b3; --line:#29383f;
+  --accent:#4fb8d6; --accent-soft:#163541; --ok:#5fcf8c; --ok-soft:#173326; --bad:#ef8278; --bad-soft:#3a1e1c; --warn:#e9b04d; --warn-soft:#3a2c12; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font-family:var(--f-body);font-size:15.5px;line-height:1.6}
+header.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--panel);border-bottom:1px solid var(--line);
+  padding-block:10px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--panel)}
+.topin{max-width:1180px;margin:0 auto;display:flex;flex-wrap:wrap;gap:10px 18px;align-items:center}
+.brand{font-family:var(--f-display);font-weight:800;font-size:18px;letter-spacing:-.01em;display:flex;align-items:center;gap:8px}
+.brand .dot{width:14px;height:14px;border-radius:50%;border:3px solid var(--accent);background:var(--panel)}
+.brand small{font-family:var(--f-mono);font-weight:400;font-size:12px;color:var(--muted)}
+nav.tabs{display:flex;gap:4px;flex-wrap:wrap}
+nav.tabs button{font:600 14px var(--f-body);border:1px solid var(--line);background:transparent;color:var(--fg);padding:6px 12px;border-radius:999px;cursor:pointer}
+nav.tabs button[aria-selected="true"]{background:var(--accent);border-color:var(--accent);color:var(--panel)}
+.search{flex:1 1 200px;min-width:0;max-width:340px;margin-left:auto}
+.search input{width:100%;font:14px var(--f-body);padding:7px 12px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--fg)}
+button:focus-visible,input:focus-visible,a:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+main{max-width:1180px;margin:0 auto;padding-block:22px 60px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.view[hidden]{display:none}
+/* Estudiar */
+.study{display:grid;grid-template-columns:270px 1fr;gap:28px;align-items:start}
+.route{position:sticky;top:calc(env(safe-area-inset-top,0px) + 70px);max-height:calc(100vh - 90px);overflow:auto;padding:4px 0}
+.route ol{list-style:none;margin:0;padding:0;position:relative}
+.route ol::before{content:"";position:absolute;left:11px;top:14px;bottom:14px;width:4px;border-radius:2px;background:var(--line)}
+.route li button{display:flex;gap:12px;align-items:flex-start;width:100%;text-align:left;background:none;border:0;color:var(--fg);padding:7px 6px 7px 0;cursor:pointer;font:500 14px/1.35 var(--f-body);border-radius:6px}
+.route li button:hover .st-name{color:var(--accent)}
+.stop{flex:0 0 26px;height:26px;border-radius:50%;border:4px solid var(--c);background:var(--panel);position:relative;z-index:1;display:grid;place-items:center;font:500 10px var(--f-mono);color:var(--fg)}
+.route li.done .stop{background:var(--c)}
+.route li.cur .st-name{font-weight:600;color:var(--accent)}
+.st-src{display:block;font:400 11.5px var(--f-mono);color:var(--muted)}
+.module{min-width:0}
+.mhead{border-left:6px solid var(--c);padding-left:16px;margin-bottom:18px}
+.eyebrow{font:500 12px var(--f-mono);letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+h1,h2,h3{font-family:var(--f-display);text-wrap:balance;letter-spacing:-.01em}
+.mhead h1{font-size:clamp(24px,3.4vw,32px);line-height:1.15;margin:4px 0 4px}
+.mhead p{margin:0;color:var(--muted);max-width:68ch}
+.sec{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:16px 20px;margin-bottom:14px}
+.sec h2{font-size:18px;margin:0 0 8px}
+.sec p,.sec li{max-width:72ch}
+.sec ul,.sec ol{padding-left:20px;margin:6px 0}
+.sec li{margin:3px 0}
+.sec b{font-weight:600}
+.key{background:var(--accent-soft);border-radius:6px;padding:10px 14px;margin:10px 0}
+.tip{background:var(--warn-soft);border-radius:6px;padding:10px 14px;margin:10px 0;font-size:14.5px}
+.tip::before{content:"Ojo en el examen · ";font-weight:600;color:var(--warn)}
+.tw{overflow-x:auto;margin:8px 0}
+table{border-collapse:collapse;font-size:14px;min-width:100%}
+th,td{border-bottom:1px solid var(--line);padding:6px 10px;text-align:left;vertical-align:top}
+th{font-family:var(--f-display);font-weight:700;font-size:13px;color:var(--muted);text-transform:uppercase;letter-spacing:.03em}
+td.n{font-family:var(--f-mono);font-variant-numeric:tabular-nums;white-space:nowrap}
+.formula{font-family:var(--f-mono);font-size:16px;background:var(--bg);border:1px solid var(--line);padding:8px 12px;border-radius:6px;display:inline-block}
+.mfoot{display:flex;flex-wrap:wrap;gap:10px;justify-content:space-between;align-items:center;margin-top:18px}
+.btn{font:600 14px var(--f-body);padding:9px 16px;border-radius:8px;border:1px solid var(--line);background:var(--panel);color:var(--fg);cursor:pointer}
+.btn.pri{background:var(--accent);border-color:var(--accent);color:var(--panel)}
+.btn.ok{background:var(--ok);border-color:var(--ok);color:var(--panel)}
+.btn.bad{background:var(--bad);border-color:var(--bad);color:var(--panel)}
+mark{background:var(--warn-soft);color:var(--fg);padding:0 2px;border-radius:2px}
+/* Tarjetas */
+.toolbar{display:flex;flex-wrap:wrap;gap:8px 12px;align-items:center;margin-bottom:16px}
+.toolbar select{font:14px var(--f-body);padding:7px 10px;border:1px solid var(--line);border-radius:8px;background:var(--panel);color:var(--fg);max-width:100%}
+.counter{font:500 13px var(--f-mono);color:var(--muted)}
+.flash{max-width:720px;margin:0 auto}
+.card{background:var(--panel);border:1px solid var(--line);border-top:6px solid var(--c,var(--accent));border-radius:12px;min-height:260px;padding:26px 28px;cursor:pointer;display:flex;flex-direction:column;gap:12px}
+.card .q{font-family:var(--f-display);font-weight:700;font-size:clamp(19px,2.6vw,24px);line-height:1.25;text-wrap:balance}
+.card .a{font-size:16px;border-top:1px dashed var(--line);padding-top:12px}
+.card .hint{margin-top:auto;font:12px var(--f-mono);color:var(--muted)}
+.flashbtns{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin-top:14px}
+.bar{height:6px;background:var(--line);border-radius:3px;overflow:hidden;margin:10px 0 0}
+.bar i{display:block;height:100%;background:var(--ok);width:0}
+/* Quiz */
+.quiz{max-width:760px;margin:0 auto}
+.qbox{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:22px 24px}
+.qbox h3{font-size:20px;margin:6px 0 14px;line-height:1.3}
+.opts{display:grid;gap:8px}
+.opt{text-align:left;font:15px/1.4 var(--f-body);padding:11px 14px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--fg);cursor:pointer}
+.opt:hover:not(:disabled){border-color:var(--accent)}
+.opt.right{background:var(--ok-soft);border-color:var(--ok)}
+.opt.wrong{background:var(--bad-soft);border-color:var(--bad)}
+.opt:disabled{cursor:default}
+.exp{margin-top:12px;padding:10px 14px;border-radius:6px;background:var(--accent-soft);font-size:14.5px}
+.score{font-family:var(--f-display);font-size:40px;font-weight:800}
+/* TP4 */
+.tp .sec h2{display:flex;gap:10px;align-items:baseline;flex-wrap:wrap}
+.tag{font:500 11px var(--f-mono);text-transform:uppercase;letter-spacing:.05em;padding:2px 8px;border-radius:999px;background:var(--accent-soft);color:var(--accent)}
+.tag.w{background:var(--warn-soft);color:var(--warn)}
+.distbar{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:4px;margin:10px 0}
+.distbar div{padding:8px 6px;border-radius:6px;text-align:center;font-size:12.5px;line-height:1.3}
+.distbar b{display:block;font:500 18px var(--f-mono)}
+.d-act{background:var(--ok-soft)} .d-tp{background:var(--accent-soft)} .d-eq{background:var(--bg);border:1px solid var(--line)} .d-auto{background:var(--bad-soft)}
+.empty{color:var(--muted);padding:30px;text-align:center}
+.results .hit{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:10px 14px;margin-bottom:8px;cursor:pointer}
+.results .hit small{font-family:var(--f-mono);color:var(--muted)}
+@media (max-width:820px){
+  .study{grid-template-columns:1fr}
+  .route{position:static;max-height:none;overflow-x:auto}
+  .route ol{display:flex;gap:6px;padding-bottom:6px}
+  .route ol::before{display:none}
+  .route li button{white-space:nowrap;border:1px solid var(--line);border-radius:999px;padding:4px 10px 4px 4px;align-items:center}
+  .route .st-src{display:none}
+  .stop{flex-basis:20px;height:20px;border-width:3px}
+  .card{padding:20px}
+}
+@media (prefers-reduced-motion:no-preference){.card,.opt,.btn{transition:background .15s,border-color .15s}}
+</style>
+<style>body{margin:0}[hidden]{display:none!important}img{max-width:100%}</style>
+<style>
+body.locked header.top, body.locked main{display:none}
+#gate{min-height:100vh;display:grid;place-items:center;padding:24px max(16px,env(safe-area-inset-left,0px))}
+#gate[hidden]{display:none}
+#gate form{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:28px;width:100%;max-width:340px;display:grid;gap:12px}
+#gate h1{margin:0;font-size:22px}
+#gate input{font:16px var(--f-body);padding:10px 12px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--fg)}
+#gate .err{color:var(--bad);font-size:14px;min-height:1.2em;margin:0}
+</style>
+</head>
+<body class="locked">
+<div id="gate"><form id="gate-f">
+  <div class="brand"><span class="dot"></span>Repaso ITMU</div>
+  <h1>Ingresá la clave</h1>
+  <input id="gate-pw" type="password" inputmode="numeric" autocomplete="off" aria-label="Clave" autofocus>
+  <button class="btn pri" type="submit">Entrar</button>
+  <p class="err" id="gate-err"></p>
+</form></div>
+<script>
+(function(){
+  function open(){document.body.classList.remove("locked");document.getElementById("gate").hidden=true}
+  try{if(sessionStorage.getItem("itmu.ok")==="1")open()}catch(e){}
+  document.getElementById("gate-f").addEventListener("submit",function(e){
+    e.preventDefault();
+    if(document.getElementById("gate-pw").value==="1234"){try{sessionStorage.setItem("itmu.ok","1")}catch(e){}open()}
+    else document.getElementById("gate-err").textContent="Clave incorrecta.";
+  });
+})();
+</script>
+
+
+<header class="top"><div class="topin">
+  <div class="brand"><span class="dot"></span>Repaso ITMU <small>TA066 · FIUBA</small></div>
+  <nav class="tabs" role="tablist">
+    <button role="tab" data-v="estudiar" aria-selected="true">Estudiar</button>
+    <button role="tab" data-v="tarjetas" aria-selected="false">Tarjetas</button>
+    <button role="tab" data-v="quiz" aria-selected="false">Autoevaluación</button>
+    <button role="tab" data-v="tp4" aria-selected="false">TP4 · Grupo 11</button>
+  </nav>
+  <div class="search"><input id="q" type="search" placeholder="Buscar un concepto (ej. DOT, ATIS, Cerdà)" aria-label="Buscar en todo el material"></div>
+</div></header>
+
+<main>
+  <section class="view" id="v-buscar" hidden><div class="results" id="results"></div></section>
+
+  <section class="view" id="v-estudiar">
+    <div class="study">
+      <aside class="route"><ol id="route"></ol></aside>
+      <article class="module" id="module"></article>
+    </div>
+  </section>
+
+  <section class="view" id="v-tarjetas" hidden>
+    <div class="flash">
+      <div class="toolbar">
+        <select id="fc-mod" aria-label="Filtrar tarjetas por tema"></select>
+        <label><input type="checkbox" id="fc-pend"> Solo las que marqué para repasar</label>
+        <span class="counter" id="fc-count"></span>
+      </div>
+      <div class="card" id="card" tabindex="0" role="button" aria-label="Dar vuelta la tarjeta"></div>
+      <div class="flashbtns">
+        <button class="btn" id="fc-prev">← Anterior</button>
+        <button class="btn bad" id="fc-no">Repasar</button>
+        <button class="btn ok" id="fc-yes">La sé</button>
+        <button class="btn" id="fc-next">Siguiente →</button>
+        <button class="btn" id="fc-shuf">Mezclar</button>
+      </div>
+      <div class="bar"><i id="fc-bar"></i></div>
+      <p class="counter" id="fc-known" style="text-align:center"></p>
+    </div>
+  </section>
+
+  <section class="view" id="v-quiz" hidden>
+    <div class="quiz">
+      <div class="toolbar">
+        <select id="qz-mod" aria-label="Filtrar preguntas por tema"></select>
+        <button class="btn" id="qz-restart">Empezar de nuevo</button>
+        <span class="counter" id="qz-count"></span>
+      </div>
+      <div id="qz"></div>
+    </div>
+  </section>
+
+  <section class="view tp" id="v-tp4" hidden></section>
+</main>
+
+<script>
+const M = [
+{id:"conceptos",t:"Conceptos básicos",src:"Clase 09",c:"#0b6e8a",intro:"Transporte, movilidad, accesibilidad y externalidades. Es la base de todo lo demás.",
+s:[
+["Marco conceptual: demanda, oferta y nivel de servicio",`<p>Las <b>actividades humanas</b> (producción y consumo de bienes) generan <b>DEMANDA</b> de transporte (pasajeros y cargas). Los <b>sistemas de transporte</b> ofrecen <b>OFERTA</b>: planta fija, planta móvil y subsistemas de operación, que definen una <b>capacidad</b>.</p><p>Cuando en la hora pico la demanda se acerca a la capacidad, baja el <b>nivel de servicio</b> y aparece la <b>congestión</b>.</p>`],
+["Definiciones",`<ul>
+<li><b>Transporte</b> (RAE): sistema de medios para conducir personas y cosas de un lugar a otro.</li>
+<li><b>Movilidad</b>: capacidad de desplazamiento de personas y bienes, y la eficacia y sustentabilidad de los sistemas que lo permiten.</li>
+<li><b>Movilidad urbana</b>: término genérico que engloba el transporte urbano y aspectos de la accesibilidad.</li>
+<li><b>Movilidad sustentable</b>: responsable con el ambiente y con las personas que habitan o transitan la ciudad.</li></ul>
+<div class="key"><b>3 pilares de la movilidad sustentable:</b><ol><li>Planificar el uso del suelo junto con la movilidad.</li><li>Reducir drásticamente la huella de carbono del transporte (emisiones GEI).</li><li>Estructurar la movilidad en torno al transporte público y los modos activos; si no se puede, priorizar vehículos compartidos, limpios y seguros.</li></ol></div>`],
+["Accesibilidad",`<p><b>Facilidad de llegar a los destinos anhelados</b> (Vasconcellos, 2015). Es la medida más directa y positiva de los efectos de un sistema de transporte. En su forma más simple se mide por el número y la naturaleza de los destinos que una persona puede alcanzar.</p>
+<div class="tw"><table><tr><th>Perspectiva</th><th>Qué mira</th></tr>
+<tr><td><b>Espacial</b></td><td>Calidad de las vinculaciones que ofrece el sistema a un lugar. Posición relativa de un sitio respecto de otros; depende de su facilidad de acceso y de la accesibilidad de las zonas que compiten con él. Las barreras urbanas la limitan; ampliar la red la mejora.</td></tr>
+<tr><td><b>Social (equidad)</b></td><td>Oportunidades que tienen las personas de usar el sistema para satisfacer sus necesidades de viaje. En términos monetarios: <b>asequibilidad</b>.</td></tr>
+<tr><td><b>Microaccesibilidad</b></td><td>“Accesibilidad física”: restricciones del entorno para personas con capacidades diferentes. Barreras arquitectónicas en estaciones, diseño de vehículos, barreras urbanísticas en el espacio público.</td></tr></table></div>`],
+["Externalidades",`<p>Efectos secundarios (costos o beneficios) de la actividad de transporte que afectan a <b>terceros no involucrados</b> en el viaje, sin que estos sean compensados o paguen por ello.</p>
+<ul><li><b>Positivas</b>: p. ej. revalorización de una zona por una nueva terminal o parada.</li>
+<li><b>Negativas (8 de la lámina)</b>: polución atmosférica, consumo energético, consumo espacial, biodiversidad, sedentarismo, fragmentación territorial, seguridad, tiempo.</li></ul>
+<p><b>Accesibilidad a servicios básicos minimizando externalidades negativas</b>: promover la movilidad activa; recuperar espacio viario; promover el transporte público; regular (limitar) el vehículo particular; regular vehículos de movilidad personal; reorganizar integralmente las áreas urbanas; gestión integrada de nodos intermodales; nuevas tecnologías; movilidad como servicio (MaaS); logística.</p>`],
+["Transporte y uso del suelo: interdependencia",`<p>Tratar el transporte o el uso del suelo por separado lleva a efectos adversos. El transporte urbano es más complejo que otros sectores porque integra varios sistemas y además <b>coproduce la accesibilidad junto con el desarrollo espacial</b>.</p>
+<div class="key"><b>Tres principios de política de transporte urbano: Evitar · Cambiar · Mejorar</b><ul>
+<li><b>Evitar</b>: reducir la intensidad de viajes con más proximidad y co-ubicación de funciones urbanas.</li>
+<li><b>Cambiar</b>: pasar de modos privados motorizados (ineficientes en espacio y energía) a transporte público y micromovilidad.</li>
+<li><b>Mejorar</b>: optimizar la eficiencia tecnológica y la sostenibilidad de cada modo.</li></ul></div>`],
+["Auto particular vs transporte colectivo",`<div class="tw"><table><tr><th></th><th>Positivos</th><th>Negativos</th></tr>
+<tr><td><b>Vehículo privado</b></td><td>Confort, privacidad, estatus, independencia, ruta directa, rapidez, accesibilidad alta, flexibilidad</td><td>Ocupación de espacio, polución, ruido, accidentalidad, congestión, estrés, costo elevado, exclusión social</td></tr>
+<tr><td><b>Transporte colectivo</b></td><td>Alta capacidad, bajo costo del viaje, pocas necesidades de espacio, alta seguridad, permite alta densidad, no hay que conducir</td><td>Mayor tiempo de viaje, de espera, de transferencia y caminando; menos confort, menos privacidad, baja flexibilidad</td></tr></table></div>`]
+]},
+{id:"ecosistema",t:"Ecosistema urbano",src:"Clase 09 · McLoughlin 1971",c:"#2f8f5b",intro:"Actividades, espacios, comunicaciones y canales: el enfoque de sistemas de la planificación urbana.",
+s:[
+["La definición que hay que saber de memoria",`<div class="key"><b>El ecosistema humano comprende actividades localizadas que ocupan espacios interconectados por comunicaciones que fluyen a través de canales.</b><br><span class="counter">J. Brian McLoughlin, “Planificación urbana y regional. Un enfoque de sistemas”, 1971</span></div>
+<ul><li><b>Progreso de la civilización</b>: división del trabajo (individuos → grupos → clanes → tribus → naciones-estado) y diferenciación del espacio físico para acomodar esas actividades (viviendas, almacenes, agricultura, minería…).</li>
+<li><b>Proceso ecológico</b>: diversificación y creciente complejidad de roles; gran capacidad de crear hábitats especiales; evolución de las comunicaciones para interconectar actividades.</li></ul>`],
+["Los 4 elementos",`<div class="tw"><table><tr><th>Elemento</th><th>Contenido</th></tr>
+<tr><td><b>Actividades</b></td><td>Residencia, trabajo, estudio, esparcimiento, otras. Áreas residenciales (white collar / blue collar) y áreas de empleo (industria, mayoristas, minoristas, otros).</td></tr>
+<tr><td><b>Espacios</b></td><td>Uso del suelo (el mapa tradicional de usos).</td></tr>
+<tr><td><b>Comunicaciones</b></td><td>Transmisión entre actividades separadas espacialmente de <b>personas, bienes, mensajes y energía</b>.</td></tr>
+<tr><td><b>Canales</b></td><td>Red de transporte: vías de los distintos modos, puentes, centros de transbordo y terminales.</td></tr></table></div>
+<p><b>Cuantificación de las comunicaciones</b>: personas (pasajeros, pasajeros-km), cargas (toneladas, t-km), flujos (n° vehículos, mensajes, Gb, kV, trenes) y densidad de flujo (veh/h, pas/día, t/año).</p>`],
+["Comunicaciones, movilidad y acceso",`<p>Las comunicaciones son <b>consecuencia y prerrequisito</b> de la separación espacial (relación recíproca). Comunicaciones = f(actividades); Movilidad = f(actividades); Transporte = f(actividades).</p>
+<p><b>El acceso no siempre requiere movimiento.</b> Jerarquía: Acceso ⊃ Movilidad ⊃ Transporte (auto particular / transporte público / modos activos) + otros.</p>
+<ul><li><b>Viajes evitables</b>: sustitución por telemática, teletrabajo.</li>
+<li><b>Acceso por proximidad</b> (modos activos): integrar planeamiento del transporte y del uso del suelo; ciudad compacta, policéntrica, diversa, con mixtura de usos.</li></ul>`],
+["Acciones modificadoras",`<p>La inspección constante del entorno genera acciones que modifican actividades, comunicaciones o canales: <b>Necesidades y aspiraciones → Fines → Cursos de acción → Decisión → Acción</b>. La acción de un individuo o grupo altera el contexto de decisión de los demás en tiempos siguientes.</p>
+<div class="tw"><table><tr><th>Sobre los espacios</th><th>Sobre comunicaciones / canales</th></tr>
+<tr><td>Comportamiento: mejorar la adecuación del espacio existente</td><td>Comportamiento: cambiar el modo de uso de una ruta o canal</td></tr>
+<tr><td>Localización: buscar un espacio más adecuado</td><td>Localización: ajustarse a la ruta más adecuada</td></tr>
+<tr><td>Desarrollo: modificar o construir un espacio</td><td>Desarrollo: crear nuevos canales</td></tr></table></div>
+<div class="tip">Las tres categorías se repiten en los dos lados: <b>comportamiento, localización, desarrollo</b>.</div>`]
+]},
+{id:"suelo",t:"Uso del suelo y modelos urbanos",src:"Clase 09 · CABA",c:"#7a5cc4",intro:"Normativa de CABA, principios del Código Urbanístico y los modelos de desarrollo urbano con sus ejemplos.",
+s:[
+["Uso del suelo",`<p>Tipo e intensidad de actividades humanas permitidas o incentivadas en un espacio. Organiza el territorio (residencia, comercio, industria, recreo, infraestructura) con zonificación para optimizar el desarrollo y reducir conflictos entre actividades.</p>`],
+["Plan Urbano Ambiental (PUA) y Código Urbanístico",`<ul><li><b>PUA (2008)</b>: ley marco a la que se ajusta el resto de la normativa urbanística y la obra pública. Soporte del planeamiento como política de Estado, a partir de consensos sobre la ciudad deseada; derecho a la ciudad para todos.</li>
+<li><b>Código Urbanístico</b>: texto consolidado según Ley N° 6.588 (actualizado a dic. 2023).</li></ul>
+<div class="key"><b>5 principios: ciudad Integrada · Policéntrica · Plural · Saludable · Diversa</b></div>
+<div class="tw"><table>
+<tr><td><b>Integrada</b></td><td>Vincular todas sus zonas, en especial el sur con el resto; la Ciudad con sus ríos y con el Conurbano (Área Metropolitana).</td></tr>
+<tr><td><b>Policéntrica</b></td><td>Consolidar el Área Central y a la vez una red de centros secundarios, comunales y barriales.</td></tr>
+<tr><td><b>Plural</b></td><td>Espacio de vida para todos los sectores sociales; hábitat digno para los de menor capacidad económica y accesible para personas con discapacidad.</td></tr>
+<tr><td><b>Saludable</b></td><td>Habitabilidad, calidad ambiental, tecnologías apropiadas en producción y transporte, saneamiento, prevención de inundaciones, gestión de residuos.</td></tr>
+<tr><td><b>Diversa</b></td><td>Pluralidad de actividades y de formas residenciales (densidades, morfologías), compatibilizando su calidad ambiental.</td></tr></table></div>
+<p><b>Mixtura de usos</b> (guiada por el principio de ciudad diversa): <b>1 Baja</b> (residencial con comercio minorista de baja afluencia) · <b>2 Media A</b> (residencia, servicios y comercios de mediana afluencia) · <b>3 Media B</b> (además depósitos, equipamientos, gran afluencia) · <b>4 Alta</b> (afluencia masiva).</p>`],
+["Modelos de desarrollo urbano",`<div class="tw"><table><tr><th>Modelo</th><th>Rasgos</th><th>Ejemplos</th></tr>
+<tr><td><b>Compacto</b></td><td>Densidad, mezcla de usos, conectividad y accesibilidad, espacio público de calidad, infraestructura sostenible</td><td>Barcelona (supermanzanas), Copenhague (bici + TP), CABA: Microcentro, Belgrano, Palermo</td></tr>
+<tr><td><b>Disperso (expandido)</b></td><td>Baja densidad, usos separados; dependencia del auto, consumo de tierra, infraestructura más cara, más GEI</td><td>Los Ángeles; Gran Buenos Aires (barrios cerrados)</td></tr>
+<tr><td><b>Lineal</b></td><td>A lo largo de un corredor (ruta o vía férrea); actividad concentrada sobre el eje</td><td>Curitiba (corredores de buses)</td></tr>
+<tr><td><b>Satélite</b></td><td>Nuevos centros periféricos autosuficientes en servicios, empleo y vivienda</td><td>Bundang (Seúl)</td></tr>
+<tr><td><b>Sostenible</b></td><td>Integra sostenibilidad ambiental, social y económica; eficiencia energética, renovables, participación</td><td>Mendoza; Friburgo (Alemania)</td></tr>
+<tr><td><b>Regenerativo</b></td><td>Revitaliza áreas degradadas; rehabilita edificios históricos, espacio público, usos mixtos</td><td>Rosario (zona portuaria, Parque de la Independencia)</td></tr></table></div>`],
+["DOT: Desarrollo Orientado al Transporte",`<p>Articula uso y ocupación del suelo, espacio público y actividad económica con los sistemas de movilidad, <b>concentrando vivienda, comercio y servicios cerca de corredores y estaciones de transporte público masivo</b>.</p>
+<ul><li>Elemento estructurador: estación de bus, BRT o metro rodeada de alta densidad con buena infraestructura peatonal y ciclista.</li>
+<li>Clave: cercanía al TP masivo, <b>distancias menores a 800 m</b>.</li>
+<li>Estrategias: desincentivar el auto; densificar; usos mixtos; alta accesibilidad peatonal.</li>
+<li>Beneficios: más pasajeros de TP, desarrollo conjunto público-privado, revitalización de barrios, vivienda asequible, crecimiento económico, suba del valor del suelo, menos uso del auto, más ventas minoristas, menos expansión urbana.</li></ul>
+<div class="tip">TOD como concepto viene de Peter Calthorpe (1997), visto en la clase de Joan Moreno Sanz.</div>`]
+]},
+{id:"paradigma",t:"Nuevo paradigma: accesibilidad",src:"Clase 09 · Litman 2011",c:"#c4582a",intro:"Del modelo clásico centrado en el tránsito a la planificación centrada en el acceso.",
+s:[
+["El paradigma clásico (secuencia de preguntas)",`<ol><li>Población, economía y actividades: ¿qué magnitud tendrán?</li><li>Uso del suelo: ¿dónde estarán?</li><li><b>Generación</b>: ¿cuántos viajes?</li><li><b>Distribución</b>: ¿hacia dónde?</li><li><b>División modal</b>: ¿en qué modo?</li><li><b>Asignación</b>: ¿por qué itinerario?</li><li>Análisis y evaluación: ¿cuál es el mejor sistema? → Plan de transporte</li><li>Monitoreo y revisión: ¿puede mejorarse el plan?</li></ol>`],
+["Breve historia de la ingeniería de tránsito",`<div class="tw"><table>
+<tr><td class="n">antes de 1920</td><td>Ciudad compacta: caminar y bici dominan; TP importante.</td></tr>
+<tr><td class="n">1920–1950</td><td>Caminata, bici y TP siguen siendo lo más común; el auto aparece y se adapta a la infraestructura existente.</td></tr>
+<tr><td class="n">desde 1950</td><td>Ciudad orientada al auto: todo lo demás se subordina al automóvil.</td></tr>
+<tr><td class="n">hoy</td><td>Planificar la ciudad vivible: priorizar los modos sustentables.</td></tr></table></div>`],
+["Litman: tres perspectivas para medir el transporte",`<p>El objetivo final de la mayor parte del transporte es el <b>acceso</b>. Las decisiones implican trade-offs entre formas de acceso, y <b>cómo se mide el transporte condiciona esas decisiones</b>.</p>
+<div class="tw"><table><tr><th></th><th>Tránsito</th><th>Movilidad</th><th>Acceso</th></tr>
+<tr><td><b>Qué es transporte</b></td><td>Viajes de vehículos</td><td>Movimiento de personas y bienes</td><td>Capacidad de obtener bienes, servicios y actividades</td></tr>
+<tr><td><b>Unidad</b></td><td>veh-km, veh-viaje</td><td>pers-km, pers-viaje, t-km</td><td>Viajes</td></tr>
+<tr><td><b>Modos</b></td><td>Autos y camiones</td><td>Autos, camiones y TP</td><td>Todos, incluso sustitutos (teletrabajo)</td></tr>
+<tr><td><b>Indicadores</b></td><td>Volúmenes, velocidades, NS del camino, costo por veh-km, estacionamiento</td><td>Velocidades de viaje por persona, NS de rutas y TP, costo por pasajero-viaje</td><td>NS multimodal, accesibilidad al uso del suelo, costo generalizado para llegar a las actividades</td></tr>
+<tr><td><b>Uso del suelo</b></td><td>Favorece desarrollo periférico de baja densidad</td><td>Cierta agrupación para dar cabida al tránsito</td><td>Agrupación, mezcla y conectividad de usos</td></tr>
+<tr><td><b>Estrategias</b></td><td>Más capacidad, velocidad y seguridad de vías y estacionamiento</td><td>Más capacidad, velocidad y seguridad del sistema de transporte</td><td>Mejorar movilidad, sustitutos y accesibilidad al uso del suelo</td></tr></table></div>
+<p><b>Unidades de medida y la perspectiva que reflejan</b>:</p><ol><li>veh-km → tránsito (valora mucho el auto).</li><li>pas-km → movilidad (valora auto y TP; subestima modos no motorizados por ser viajes cortos).</li><li>viajes → acceso (igual valor a auto, TP, bici, caminata, teletrabajo).</li><li>tiempo de viaje → acceso (prioriza caminata, bici y TP).</li><li>costos generalizados → acceso.</li></ol>
+<div class="key"><b>Ejemplo Reino Unido (promedio anual por persona)</b>: la caminata es el 3% de la distancia, pero el 18% del tiempo de viaje y el 25% de los viajes. El auto (conductor) es 51% de la distancia y 41% de los viajes. Muestra que medir en km esconde a los modos activos.</div>`],
+["Ciudades de referencia (videos)",`<ul><li><b>Groningen</b>: red de infraestructura ciclista integrada al TP; centro dividido en cuadrantes con restricciones al auto.</li>
+<li><b>París, ciudad de los 15 minutos</b>: proximidad y accesibilidad, zonificación mixta, movilidad activa, revalorización del espacio público, descentralización de vecindarios.</li>
+<li><b>Barcelona, supermanzanas</b>: agrupa varias manzanas, cierra calles al tránsito pasante, recupera espacio público, prioridad a peatón y ciclista.</li></ul>
+<p><b>Problemas</b>: espacios naturales usurpados por autopistas, veredas cada vez más estrechas por el estacionamiento, ciudad pensada para el auto, espacios ruidosos e irrespirables. <b>Políticas</b>: red ciclista segura, limitar velocidad y circulación del auto, peatonalizar, campañas a favor del TP, cargadores eléctricos y bicicleteros.</p>`]
+]},
+{id:"modal",t:"Elección modal y planes de movilidad",src:"Clase 09 · PMS 2030",c:"#d4a017",intro:"Qué determina el modo que se elige, y cómo se planifica la movilidad sustentable (incluye el Plan de Movilidad Sustentable 2030 de CABA).",
+s:[
+["Criterios de elección modal (4 grupos)",`<div class="tw"><table><tr><th>Usuario</th><th>Viaje</th><th>Urbanas</th><th>Vehículo</th></tr>
+<tr><td>Edad, género, unidad familiar, ingresos, permiso de conducir, hábitos ciclistas y de conducción, situación profesional, estilo de vida</td><td>Frecuencia del servicio, tarifa, tiempo de viaje, tiempo de espera, medio, objetivo del viaje, intermodalidad, seguridad, confort</td><td>Meteorología, forma urbana, densidad, servicios públicos, calidad del espacio público, segregación urbana, mixtura funcional, distancia a la red, regulación urbana</td><td>Peso, dimensión, estacionamiento, asiento, velocidad, combustible, propiedad, autonomía, mantenimiento</td></tr></table></div>
+<p><b>Barcelona vs CABA</b>:</p>
+<div class="tw"><table><tr><th></th><th>Habitantes</th><th>Superficie</th><th>Densidad</th><th>Viajes/día</th><th>Reparto (según lámina)</th></tr>
+<tr><td>AM Barcelona</td><td class="n">3,2 M</td><td class="n">636 km²</td><td class="n">5.100 hab/km²</td><td class="n">11,5 M</td><td class="n">53,1 / 22,7 / 24,2 %</td></tr>
+<tr><td>CABA</td><td class="n">3,1 M</td><td class="n">203 km²</td><td class="n">15.150 hab/km²</td><td class="n">7,6 M</td><td class="n">22,5 / 50,3 / 27,2 %</td></tr></table></div>
+<p class="counter">Los porcentajes figuran sin rótulo en el texto de la lámina: revisá en el gráfico a qué modo corresponde cada uno.</p>`],
+["Planificación tradicional vs orientada a la accesibilidad",`<p><b>Tradicional</b>: reducida a lo técnico (el transporte); organizar flujos con una red masiva para necesidades masivas.</p>
+<p><b>Orientada a la accesibilidad</b>: surge por cambios de comportamiento; ritmos urbanos desincronizados, nuevos modos de vida y trabajo, más actores, necesidades más individualizadas que requieren coordinar escalas y usar nuevas tecnologías.</p>
+<div class="key"><b>4 ejes de acción de la movilidad sustentable</b>: propiciar patrones espaciales compactos (desalentar el disperso y el fragmentado); priorizar el transporte público; desalentar el auto particular; promover modos no motorizados.</div>`],
+["Dimensiones e indicadores de la movilidad sustentable",`<div class="tw"><table><tr><th>Dimensión</th><th>Aspectos</th><th>Indicador de ejemplo</th></tr>
+<tr><td><b>Desarrollo económico: eficacia</b> (accesibilidad)</td><td>Cobertura y estructura de redes, capacidad, integración</td><td>% de viajes con acceso a un modo público ≤ 10 min; % veh-km por la red primaria</td></tr>
+<tr><td><b>Desarrollo económico: eficiencia</b></td><td>Costo, velocidad/tiempo, calidad, rentabilidad, conducta de usuarios</td><td>Costo medio hogar-trabajo; % TP en viajes hogar-trabajo; tiempo y distancia media hogar-trabajo</td></tr>
+<tr><td><b>Equidad</b> (distribución de la accesibilidad)</td><td>Personas con movilidad reducida, sectores de bajos recursos, intergeneracional</td><td>% del ingreso gastado en transporte (estrato bajo)</td></tr>
+<tr><td><b>Protección del ambiente y recursos</b></td><td>Seguridad, energía, uso del espacio, ruido, contaminación</td><td>Accidentes/año; muertos/10⁸ veh-km; TEP/10⁶ pas-km; Leq (dBA); NOx, CO, SO₂, GEI</td></tr>
+<tr><td><b>Gestión</b> (gobernabilidad)</td><td>Capacidad institucional, coordinación inter e intra-jurisdiccional, integración ciudad/región, participación, integración uso del suelo/transporte, estadísticas</td><td>—</td></tr></table></div>`],
+["Plan de Movilidad Sustentable 2030 (CABA)",`<div class="key"><b>5 pilares</b>: sustentable · accesible · metropolitana · segura · personalizada.<br><b>5 estrategias</b>: hacer más atractivo el TP · potenciar la intermodalidad · desarrollar los modos activos · compartir la calle · organizar la logística.</div>
+<div class="tw"><table><tr><th>Pilar</th><th>Acción que lo caracteriza</th><th>Desafíos</th></tr>
+<tr><td><b>Sustentable</b></td><td>Promover una movilidad responsable con el ambiente y las personas</td><td>Reducir drásticamente la huella de carbono; estructurar la movilidad en torno a TP y modos activos, o vehículos compartidos, limpios y seguros</td></tr>
+<tr><td><b>Accesible</b></td><td>Facilitar el acceso de todas las personas a los bienes y servicios urbanos</td><td>Acceso equitativo; desplazarse de manera eficaz y segura sin importar la condición de la persona; evitar la exclusión y la pérdida de oportunidades</td></tr>
+<tr><td><b>Metropolitana</b></td><td>Mejorar la integración de la ciudad con la región metropolitana</td><td>Gobernanza transversal y coordinada; “pensar global, actuar local”; agenda metropolitana común de movilidad y territorio</td></tr>
+<tr><td><b>Segura</b></td><td>Mejorar la seguridad ciudadana y cuidar a los actores vulnerables</td><td>Seguridad vial: pacificar el tránsito y transformar la calle priorizando a los vulnerables; percepción de seguridad en distintas escalas (parada, barrio, ciclovía) y tiempos (día, noche, fin de semana)</td></tr>
+<tr><td><b>Personalizada</b></td><td>Atender necesidades distintas de personas y mercaderías con tecnología</td><td>Movilidad como conjunto de servicios combinables; MaaS: movilidad sin costuras (seamless) que integra servicios, información y pago</td></tr></table></div>
+<div class="tw"><table><tr><th>Estrategia</th><th>Objetivo</th></tr>
+<tr><td>Hacer más atractivo el TP</td><td>Mejorar la red de TP para dar mejor servicio y atraer nuevos usuarios</td></tr>
+<tr><td>Potenciar la intermodalidad</td><td>Mejorar las condiciones de cambio modal para potenciar el sistema en su conjunto</td></tr>
+<tr><td>Desarrollar los modos activos</td><td>Mejorar condiciones y tiempos de viaje para hacer más atractivos los modos activos</td></tr>
+<tr><td>Compartir la calle</td><td>Compartir la calle en el tiempo y el espacio; adaptarla a sus múltiples usuarios</td></tr>
+<tr><td>Organizar la logística</td><td>Mejorar la eficiencia de la distribución de mercaderías en sus distintas escalas</td></tr></table></div>`]
+]},
+{id:"pet",t:"Conectividad y PET",src:"Clase 09",c:"#4a7d9c",intro:"Conectividad territorial y el Plan Estratégico Territorial de Argentina.",
+s:[
+["Conectividad",`<p>En el planeamiento territorial: capacidad de interconectar regiones, ciudades o localidades mediante redes de transporte. Es un <b>atributo de las vinculaciones</b> (infraestructura y servicios) entre lugares, descripto por <b>cantidad de conexiones y capacidades</b>.</p>
+<ul><li><b>Física</b>: carreteras y autopistas, ferrocarriles, puertos y vías navegables, aeropuertos.</li><li><b>Otras</b>: digital, económica (redes de comercio), social (interacciones comunitarias).</li></ul>`],
+["Plan Estratégico Territorial (PET)",`<p>Versiones: <b>Avance 2008</b> (1816-2010-2016) y <b>PET Bicentenario, Avance 2011</b>. Compara un <b>modelo heredado</b> con un <b>modelo deseado</b>.</p>
+<p><b>Objetivos específicos (Avance 2008)</b>:</p><ol><li><b>Rescate de capacidades instaladas</b>: intervenir en la composición territorial para mejorar la posición nacional y global, superando déficits.</li><li><b>Desarrollo de infraestructuras</b>: redes urbanas funcionales a la calidad de vida y la producción; más y mejor infraestructura articulada local-provincial-nacional-internacional.</li><li><b>Potenciar recursos y capacidades</b>: trabajar en las zonas rezagadas valorizando sus recursos; que las administraciones dinámicas colaboren en un territorio más equilibrado.</li></ol>
+<div class="key"><b>Ideas rectoras del modelo deseado</b><br>A. Esquema integrado nacional e internacional (pasos fronterizos, corredores de integración, globalización como oportunidad)<br>B. Fortalecimiento y/o reconversión productiva (nuevos núcleos productivos, resolver cuellos de botella)<br>C. Conectividad interna (nuevos ejes de articulación, corredores bioceánicos transversales)<br>D. Sistema policéntrico de ciudades (revertir la migración a grandes ciudades)</div>
+<p>Proyectos de infraestructura de impacto regional organizados por <b>franjas Norte, Centro y Sur</b>.</p>`]
+]},
+{id:"demanda",t:"Demanda y generación de viajes",src:"Clase 09 · Modelo de 4 etapas",c:"#b8336a",intro:"Características de la demanda y la primera etapa del modelo clásico.",
+s:[
+["Características de la demanda",`<ul><li><b>Derivada</b>: no es un fin en sí misma; la gente viaja para satisfacer necesidades en destino y los bienes ganan valor al trasladarse.</li>
+<li><b>Cualitativa y diferenciada</b>: por hora, día, motivo, tipo de mercancía, importancia de velocidad y frecuencia.</li>
+<li><b>Elementos dinámicos</b>: concentración geográfica y variabilidad en el tiempo (hora pico, estacionalidad) (Ortúzar & Willumsen).</li>
+<li><b>Niveles</b>: global (al sistema), a cada modo, a cada operador.</li></ul>
+<div class="tw"><table><tr><th></th><th>Motivos</th><th>Causas generadoras</th></tr>
+<tr><td><b>Personas</b></td><td>Trabajo, compras, educación, social, recreación, turismo</td><td>Hogar-trabajo/escuela, negocios, vida doméstica, relaciones sociales, turismo, migraciones</td></tr>
+<tr><td><b>Bienes</b></td><td>Distribución física/logística: manipuleo, depósito, packaging, transporte</td><td>Localización de recursos naturales, especialización horizontal, economías de escala, relaciones inter-industriales, desequilibrios regionales</td></tr></table></div>`],
+["Generación de viajes",`<p>Cuantifica la relación causal entre viajes, uso del suelo y características socioeconómicas de las zonas. Resultado: <b>producción P<sub>i</sub></b> (viajes originados en la zona) y <b>atracción A<sub>j</sub></b> (viajes destinados a la zona).</p>
+<p class="formula">P<sub>i</sub>, A<sub>i</sub> = f(US, CSE, ST)</p>
+<ul><li><b>Uso del suelo</b>: tipo (residencial, comercial, industrial…), intensidad (cantidad o densidad), ubicación.</li>
+<li><b>Socioeconómicas</b>: ingreso, tamaño del hogar, posesión de auto, tipo de vivienda, actividad de los integrantes.</li>
+<li><b>Sistema de transporte</b>: accesibilidad.</li></ul>
+<p><b>Variables de producción</b>: población/hogares, densidad residencial, ingreso, tasa de motorización, edad y sexo, distancia al centro, costos y tiempos, accesibilidad. <b>De atracción</b>: tipo e intensidad del uso del suelo y accesibilidad.</p>`],
+["Propósitos y el ejemplo P/A vs O/D",`<p><b>Base</b> del viaje: hogar o no. Combinaciones: <b>BHT</b> (hogar-trabajo), <b>BHE</b> (estudio), <b>BHC</b> (compras), <b>BHO</b> (otros), <b>NBH</b> (no basado en el hogar). Horario: hora pico (mañana/tarde) o diario.</p>
+<div class="tip">En P/A el extremo <b>hogar siempre es la producción</b>, sin importar el sentido. En O/D importa el sentido real. Ej.: volver del trabajo a casa (V2) es P/A = AB pero O/D = BA. Hogar→cine sería BHO; trabajo→cine es NBH y ahí P/A = O/D.</div>
+<p><b>Accesibilidad de una zona</b>:</p><p class="formula">Acc<sub>i</sub> = Σ<sub>j=1..n</sub> A<sub>j</sub> · F<sub>ij</sub></p>
+<p>A<sub>j</sub> = viajes atraídos por j; F<sub>ij</sub> = factor de fricción entre i y j (a mayor factor, mayor accesibilidad).</p>
+<p><b>Métodos de generación</b>: factor de crecimiento · regresión lineal múltiple · análisis de categorías (clasificación cruzada). Ejemplo <b>EPTRM</b>: clasificación cruzada por nivel socioeconómico (alto/medio/bajo), posesión de auto (C/A, S/A) y nivel de accesibilidad (I a V).</p>`]
+]},
+{id:"planeamiento",t:"Planeamiento del transporte",src:"Clase 10",c:"#0f8577",intro:"Definición, ciclo del planeamiento, el contexto argentino, teoría de la demanda y modelos.",
+s:[
+["Por qué planificar",`<ul><li><b>Planeamiento económico global</b>: importancia del sector (empleo), efectos territoriales de las redes, competitividad, comercio exterior, turismo.</li>
+<li><b>Contexto sectorial</b>: decisiones del Estado (regulación e inversión), nivel óptimo de intervención, marco regulatorio de privados, logística/intermodalidad, impacto ambiental.</li>
+<li><b>Ámbito urbano</b>: relación transporte-crecimiento urbano, accesibilidad, impacto social y físico.</li></ul>
+<div class="key"><b>Definición formal</b>: proceso <b>sistémico, integral, racional y continuo</b> de previsión, organización y uso de los recursos disponibles para lograr objetivos y metas en un tiempo y espacio prefijados.</div>
+<p><b>Control</b>: da dirección conforme al plan (no en sentido restrictivo), con estímulos positivos para mantener las variaciones dentro de límites.</p>`],
+["Ciclo del planeamiento",`<ol><li>Decisión de planificar (definiciones, alcance, métodos y organismos)</li><li>Formulación de metas y objetivos (valores de la comunidad, políticas públicas)</li><li>Estudio de cursos de acción: relevamiento y diagnóstico, prefactibilidad y factibilidad</li><li>Evaluación de proyectos y selección del más conveniente</li><li>Implementación (momento óptimo, financiación, acciones escalonadas)</li><li>Revisión y control (monitoreo, retroalimentación)</li></ol>
+<div class="tw"><table>
+<tr><td><b>Objetivos</b></td><td>Fines generales</td></tr><tr><td><b>Metas</b></td><td>Pasos hacia el objetivo</td></tr>
+<tr><td><b>Políticas</b></td><td>Normas para tomar decisiones y para su implementación</td></tr>
+<tr><td><b>Programas</b></td><td>Conjunto de actividades relacionadas hacia un objetivo</td></tr>
+<tr><td><b>Proyectos</b></td><td>Unidad autónoma de actividad (inversión)</td></tr></table></div>`],
+["Argentina: por qué hay que planificar",`<ul><li>Gran superficie ocupada con <b>muy baja densidad (16,8 hab/km²)</b>; población concentrada en la pampa húmeda (~28 M, 60%) y muy dispersa en el resto; ingresos medios/bajos.</li>
+<li>No hay “zonas vacías”: <b>cada argentino sostiene un gran costo del sistema vial</b>. Red madura en extensión pero poco pavimentada (34%).</li>
+<li><b>Logística por camión</b>: 93% de las cargas interurbanas (~500-600 Mt; costo USD 1,5-2,5/km). FFCC 24 Mt (2022, ~15.000 km, 9 km/h promedio); fluvial 1,4 Mt.</li>
+<li>¿Por qué camión? Poca carga, estacional (agrícola), viajes cortos que requieren <b>transbordos, que cuestan más que el transporte en sí</b>.</li>
+<li><b>FFCC de carga</b>: la clave de su viabilidad es la <b>densidad</b> (millones t-km / km de red). Argentina 0,80 (puesto 65), la menor de la región; los primeros 12 países ~12. Habría que multiplicar la carga por 10.</li>
+<li>Matriz ferroviaria: agrícolas + construcción ~75% en Argentina vs ~17% en el mundo; carbón + hierro ~1% vs ~58%. <b>Pocas cargas “ferrocarrileables”</b>.</li>
+<li><b>FFCC de pasajeros</b> (Trenes Argentinos/OFSE): ingreso medio ~USD 0,1/pasajero vs costo operativo ~USD 5,0; 98% de ingresos no operativos (subsidio).</li>
+<li><b>Vialidad Nacional</b>: 77% de la red regular o mala (2023); históricamente se priorizan obras nuevas sobre mantenimiento; mantenimiento diferido. “No es un problema de recursos, sino de ineficiencias.” Presupuesto 2026 ~USD 450 M (20% del histórico de ~USD 2.000 M).</li></ul>`],
+["Teoría de la demanda",`<ul><li>Derivada de la teoría económica de elección del consumidor; también intervienen sociología, psicología, marketing.</li>
+<li><b>Objeto</b>: dimensionar la accesibilidad prediciendo el tráfico; determinar precios.</li>
+<li><b>Definición</b>: cuantificación de la magnitud del transporte en un sitio y en condiciones temporales determinadas. No es instantánea: hay plazos de respuesta.</li></ul>
+<div class="tw"><table><tr><th>Factores</th><th></th></tr>
+<tr><td><b>De inducción</b> (aumentan el volumen)</td><td>Población, ingresos (con bienes inferiores como excepción), usos del suelo, actividad económica</td></tr>
+<tr><td><b>De disuasión</b></td><td>Costo, tiempo de viaje, incomodidad, inseguridad, mal tiempo</td></tr>
+<tr><td><b>Otros</b></td><td>Competencia o complementariedad con otros modos</td></tr></table></div>
+<div class="key"><b>Variaciones temporales</b>: de la <b>cantidad demandada</b> = movimiento sobre la misma curva (incluye ramp-up), por cambios en costos, <b>corto plazo</b>. De la <b>función demanda</b> = desplazamiento de la curva (d<sub>n</sub> → d<sub>n+1</sub>) por crecimiento de población o economía, <b>largo plazo</b>.</div>`],
+["Modelos de transporte",`<p><b>Objeto primario</b>: estimar la demanda para todo el plazo, analizar ingresos (peaje/tarifa), diseño funcional. <b>Secundario</b>: causas de congestión, proyecto preliminar, política tarifaria.</p>
+<p><b>Alcance</b>: antecedentes (información secundaria) → relevamiento de campo (conteos, encuestas OD y PD, giros, velocidades) → modelo calibrado del año base → modelo proyectado (escenarios, sensibilidad) → diseño funcional.</p>
+<div class="tw"><table><tr><th>Macro</th><th>Micro</th><th>Otros</th></tr>
+<tr><td>EMME, TransCAD, Visum. Recrean la demanda actual, viajes entre zonas, multimodal, pronóstico por escenarios. No consideran congestión (Saturn sí la propaga, sólo carreteras).</td><td>Capacidad de vías, conflictos de circulación (colas que bloquean intersecciones), velocidades. Verifican lo macro.</td><td>HCM (TRB), TCQSM (TCRP), Trip Generation e ITE Parking Generation</td></tr></table></div>
+<p><b>Modelo de 4 etapas</b>: descripción macroscópica de flujos; desarrollado en <b>1960 en el Chicago Area Transportation Study (CATS)</b>. Etapas del proceso: área de estudio → zonificación y red relevante → usos del suelo, población, actividad, sistema → características de viajes actuales → generación, distribución, división modal, asignación → evaluación → revisión de políticas y proyectos.</p>`],
+["Ciudad, transporte y regulación",`<ul><li><b>Sistema</b>: partes organizadas que interactúan para un objetivo. <b>Ecosistema</b>: seres vivos y factores físicos de un ambiente; en la ciudad el componente principal es el hombre.</li>
+<li><b>Desarrollo sustentable</b>: cubre las necesidades del presente sin comprometer las de generaciones futuras. Dimensiones: social, económica, ambiental, político-institucional.</li>
+<li><b>El espacio es el activo más valioso de una ciudad</b>: el transporte ocupa entre el <b>20 y 40%</b> de la superficie. Es gran inductor del desarrollo urbano y conviene subordinarlo al planeamiento estratégico.</li></ul>
+<div class="key"><b>Objetivos del Estado al regular</b>: seguridad de personas y bienes, preservación de la infraestructura y protección del ambiente: <b>SIEMPRE</b>. Económicos: <b>A VECES</b>. Los hogares urbanos gastan 8-16% del ingreso en transporte (más del 25% en hogares muy pobres).</div>
+<p><b>Morfología</b>: resultado de procesos históricos; el transporte acompaña y condiciona el crecimiento. En baja densidad predomina el transporte individual; <b>la densificación es la clave de la sustentabilidad del TP</b>.</p>
+<p><b>Funciones de las vías urbanas</b>: ambiental (luz, aire), social (ámbito de relaciones), accesibilidad (peatonal y vehicular) y tránsito → base de la jerarquización vial.</p>
+<p><b>Caso centro de Buenos Aires</b>: congestión → restricción al tránsito → caída de actividad y vacancia → empresas al eje norte (sin TP) → congestión del eje norte. ¿Se podría haber hecho otra cosa?</p>`]
+]},
+{id:"espacio",t:"Espacio y movimiento",src:"Clase 11 · Joan Moreno Sanz",c:"#5c6f2a",intro:"Integración espacial de la movilidad: el Randstad holandés y el Área Metropolitana de Barcelona.",
+s:[
+["Estructura de la clase",`<ol><li><b>Demanda y modelo urbano</b> (fundamentos)</li><li><b>El territorio de las redes</b> (multimodalidad): Randstad-Holland</li><li><b>El corredor gris/verde</b> (road ecology): AMB</li><li><b>Movilidad y espacio público</b> (proyectos de Barcelona)</li></ol>
+<p>Fundamentos: criterios de elección modal, Barcelona vs CABA, externalidades negativas del paradigma del auto y combustibles fósiles, la movilidad como fenómeno cultural, costos sociales (contabilidad de Vancouver) y la relación <b>densidad vs consumo energético</b> (Bertaud; Kenworthy & Newman): el modelo urbano (demanda) define la red (oferta).</p>
+<p>Variables del modelo de desarrollo: ocupación del suelo, consumo energético, diversidad de usos, fragmentación, cohesión social, dependencia del auto, mantenimiento del espacio público, complejidad urbana, sociabilidad.</p>`],
+["Randstad-Holland: el territorio de las redes",`<p>Países Bajos: <b>17,8 M hab, ~500 hab/km²</b>, gran parte bajo el nivel del mar.</p>
+<div class="tw"><table>
+<tr><td class="n">1958</td><td>Plan para el Oeste: modelo de <b>descentralización concentrada</b></td></tr>
+<tr><td class="n">1973</td><td>Domingos sin coches (crisis del petróleo)</td></tr>
+<tr><td class="n">1988</td><td>IV Plan Nacional de Ordenación Espacial (IV Nota)</td></tr>
+<tr><td class="n">1991</td><td>Plan VINEX: nuevos barrios ligados al transporte (centro de Almere, Leidsche Rijn en Utrecht)</td></tr>
+<tr><td class="n">1997</td><td>Definición de TOD de Peter Calthorpe (“The next American metropolis”)</td></tr>
+<tr><td>—</td><td>Modelo Butterfly (Holanda Septentrional) y el área de la estación Rotterdam CS</td></tr></table></div>`],
+["El corredor gris/verde: Barcelona",`<ul><li><b>Cerdà, 1859</b>: Plan de Ensanche con ejes de conexión territorial y diseño de encrucijadas (chaflanes).</li>
+<li><b>1978</b>: “araña” de tráfico; Avenida Meridiana como autopista urbana en los 70 (Plan de Vías 1985). Comparación de secciones 1859-1985 y 1995-2022.</li>
+<li><b>Plan de Nuevas Centralidades</b> (Joan Busquets, 1987).</li>
+<li>Evolución de la IMD (intensidad media diaria) en el centro 1978-2019.</li>
+<li><b>Propuesta para el corredor norte</b>: matriz biofísica y sostenibilidad + redes de transporte + <b>visión estratégica 5+2: 5 conectores transversales y 2 calles metropolitanas</b> (Meridiana lateral sur y norte).</li></ul>`],
+["Urbanidad del espacio de la movilidad",`<div class="tw"><table><tr><th>Da calidad</th><th>La quita</th></tr>
+<tr><td>Diversidad de usuarios</td><td>Homogeneidad social</td></tr><tr><td>Mixtura de actividades</td><td>Hiperespecialización funcional</td></tr>
+<tr><td>Espacio de la interacción</td><td>Escenario de contemplación</td></tr><tr><td>Densidad cualitativa</td><td>Densidad cuantitativa</td></tr>
+<tr><td>Interescalaridad</td><td>Espacio del monopolio</td></tr><tr><td>Arquitectura perforada</td><td>Arquitectura cerrada (“autista”)</td></tr>
+<tr><td>Intersección de redes</td><td>Segregación de movimientos</td></tr><tr><td>Accesibilidad</td><td>Aislamiento</td></tr>
+<tr><td>Multiplicidad de conexiones</td><td>Movilidad exclusiva</td></tr><tr><td>Calidades ecológicas, biodiversidad</td><td>Alta ocupación, mineralización, degradación</td></tr></table></div>`],
+["Proyectos de Barcelona",`<div class="tw"><table><tr><th>Proyecto</th><th>Qué hay que recordar</th></tr>
+<tr><td><b>Superilles</b> (supermanzanas)</td><td>Red territorial de superilles; nuevo modelo de circulación (tránsito pasante al perímetro); Poble Nou, Sant Antoni. Ecologia Urbana (Salvador Rueda).</td></tr>
+<tr><td><b>Tram Diagonal</b></td><td>Conecta Tram Baix + Tram Besòs por la Av. Diagonal (2023-26), nueva sección transversal.</td></tr>
+<tr><td><b>Pg. de Sant Joan</b></td><td>Remodelación 2012-14 (Lola Domènech).</td></tr>
+<tr><td><b>Pl. Glòries Catalanes</b></td><td>De nudo vial (1966, 2003) a parque: proyecto “Canopia urbana” (2014), vista 2025.</td></tr>
+<tr><td><b>Bus ortogonal</b></td><td>Nueva red 2015 (TMB): líneas H (horizontales), V (verticales), D (diagonales); trasbordo entre líneas, mejor accesibilidad.</td></tr>
+<tr><td><b>Ejes verdes</b></td><td>21 calles verdes = 33 km; 21 plazas = 3,9 ha; +33,4 ha peatonales; 6,6 ha de verde; <b>proximidad de 200 m</b> para toda la población local. Consell de Cent, plaza de Rocafort. Visión: 183,6 km.</td></tr>
+<tr><td><b>Calle siglo XXI</b></td><td>Modelo de calle (Cristóbal de Moura).</td></tr></table></div>`]
+]},
+{id:"its",t:"Sistemas Inteligentes de Transporte",src:"Clase 04 · ITS / STI",c:"#3b4cc0",intro:"Definiciones, objetivos, áreas de aplicación y ejemplos argentinos.",
+s:[
+["Definiciones",`<ul><li>Los ITS mejoran la movilidad y la seguridad <b>integrando tecnologías avanzadas de comunicaciones</b> en la infraestructura y en los vehículos.</li>
+<li>(UE) Aplicaciones avanzadas que, <b>sin incluir la inteligencia como tal</b>, dan servicios innovadores en los modos y la gestión del tráfico, para un uso más seguro, coordinado e “inteligente” de las redes.</li>
+<li>(Sussman) Combinan tecnología de punta (información, comunicaciones, sensores, métodos matemáticos) con la infraestructura de transporte terrestre convencional.</li></ul>
+<p>La <b>disponibilidad de información</b> determina la operación del sistema, las inversiones y las elecciones de los usuarios. Todo ITS se basa en información en <b>tiempo real</b>.</p>`],
+["Objetivos y problemas",`<ul><li>Reducir accidentes y sus consecuencias</li><li>Eliminar detenciones innecesarias (vehículos que “hablan” con los semáforos)</li><li>Conducción más eficiente, menor consumo</li><li>Información a pasajeros (tiempos de todos los modos y rutas, impacto ambiental)</li><li>Información a gestores para evaluar el sistema multimodal</li></ul>
+<p><b>Problemas</b>: congestión, polución, accidentes. <b>Soluciones</b>: navegación satelital, peaje electrónico, información de tránsito, cartelería variable, comunicación vehículo-vehículo e infraestructura, llamadas de emergencia, tacógrafo digital.</p>
+<p><b>Directiva 2010/40/UE, 4 ámbitos prioritarios</b>: uso óptimo de datos de red, tráfico y desplazamientos; continuidad de servicios ITS para tráfico y mercancías; aplicaciones para seguridad vial; conexión vehículo-infraestructura.</p>`],
+["Funcionalidad y áreas de aplicación",`<div class="key"><b>Detectar</b> vehículos/cargas → <b>Comunicar</b> información → <b>Procesar</b> información → <b>Gestionar</b> la red</div>
+<div class="tw"><table><tr><th>Sigla</th><th>Nombre</th><th>Qué hace</th></tr>
+<tr><td><b>ATMS</b></td><td>Gestión avanzada de transporte</td><td>Gestión de incidentes, semáforos, peaje electrónico, predicción y mitigación de congestión</td></tr>
+<tr><td><b>ATIS</b></td><td>Información al viajero</td><td>Información antes y durante el viaje, en tiempo real</td></tr>
+<tr><td><b>AVCS</b></td><td>Control de vehículos</td><td>Mejoran el control y la seguridad del vehículo</td></tr>
+<tr><td><b>AHS</b></td><td>Carreteras automatizadas</td><td>Máxima expresión de AVCS: el conductor cede todo el control</td></tr>
+<tr><td><b>CVO</b></td><td>Vehículos comerciales</td><td>Productividad de flotas: WIM (peso en movimiento), ETTM</td></tr>
+<tr><td><b>APTS</b></td><td>Transporte público</td><td>Información al pasajero, cobro, transbordos, diagramación, control de intervalos</td></tr>
+<tr><td><b>ARTS</b></td><td>Transporte rural</td><td>Seguridad en viajes rurales</td></tr></table></div>`],
+["Ejemplos",`<ul><li><b>DSRC</b> (Dedicated Short-Range Communications): comunicación inalámbrica de corto alcance, uni o bidireccional. Evitar colisiones en intersecciones, advertencias entre vehículos.</li>
+<li><b>OCCOVI</b> (corredores viales concesionados): paneles de mensaje variable, estaciones meteorológicas, transmisión GPRS, pago electrónico (validación, detección automática de categorías, registro de dominios por CCTV).</li>
+<li><b>CMM Rosario</b> (Centro de Monitoreo de la Movilidad): control de tránsito, monitoreo de TP, taxis y remises; GPS, cámaras y sensores; ondas verdes; cumplimiento de recorridos y horarios.</li>
+<li><b>AUSOL, Sistema de Autopista Inteligente (1998)</b>: objetivo principal <b>seguridad vial</b> (complementario: nivel de servicio). Estado de la vía en tiempo real, detección rápida de incidentes, mensajes, control de accesos e intersecciones. Equipamiento: espiras, radar, TV Autoscope, control de velocidad, CCTV, paneles de mensaje variable, semaforización.</li></ul>`]
+]}
+];
+
+const FC = [
+["conceptos","¿Qué es la accesibilidad (Vasconcellos)?","La facilidad de llegar a los destinos anhelados. Es la medida más directa y positiva de los efectos de un sistema de transporte; en su forma más simple, el número y la naturaleza de destinos alcanzables."],
+["conceptos","Las 3 perspectivas de la accesibilidad","Espacial (posición relativa de un lugar), social o equidad (oportunidades; asequibilidad) y microaccesibilidad (barreras físicas para personas con discapacidad)."],
+["conceptos","¿Qué es una externalidad del transporte?","Un costo o beneficio que la actividad de transporte genera sobre terceros no involucrados en el viaje, sin compensación ni pago."],
+["conceptos","Las 8 externalidades negativas de la lámina","Polución atmosférica, consumo energético, consumo espacial, biodiversidad, sedentarismo, fragmentación territorial, seguridad y tiempo."],
+["conceptos","Evitar · Cambiar · Mejorar","Evitar: menos viajes por proximidad. Cambiar: del auto al TP y micromovilidad. Mejorar: eficiencia tecnológica y sostenibilidad de cada modo."],
+["conceptos","Los 3 pilares de la movilidad sustentable","Planificar el uso del suelo junto con la movilidad; reducir la huella de carbono; estructurar la movilidad en torno al TP y los modos activos."],
+["conceptos","¿Por qué el transporte urbano es más complejo que otros sectores?","Porque integra varios sistemas y coproduce la accesibilidad junto con el desarrollo espacial."],
+["ecosistema","Definición de ecosistema humano (McLoughlin 1971)","Actividades localizadas que ocupan espacios interconectados por comunicaciones que fluyen a través de canales."],
+["ecosistema","¿Qué se transmite en las comunicaciones?","Personas, bienes, mensajes y energía, entre actividades separadas espacialmente."],
+["ecosistema","¿Qué son los canales?","La red de transporte: vías de los distintos modos, puentes, centros de transbordo y terminales."],
+["ecosistema","¿El acceso siempre requiere movimiento?","No. Se puede acceder por proximidad o por telemática/teletrabajo (viajes evitables). Jerarquía: acceso ⊃ movilidad ⊃ transporte."],
+["ecosistema","Acciones modificadoras sobre espacios y canales","Tres tipos en ambos casos: comportamiento (adaptar lo existente), localización (buscar uno mejor) y desarrollo (crear uno nuevo)."],
+["suelo","Los 5 principios del Código Urbanístico de CABA","Ciudad integrada, policéntrica, plural, saludable y diversa."],
+["suelo","Mixtura de usos en el Código Urbanístico","1 Baja, 2 Media A, 3 Media B, 4 Alta (de residencial con comercio minorista a afluencia masiva)."],
+["suelo","Modelos de desarrollo urbano y un ejemplo de cada uno","Compacto (Barcelona, Copenhague), disperso (Los Ángeles, GBA), lineal (Curitiba), satélite (Bundang), sostenible (Friburgo, Mendoza), regenerativo (Rosario)."],
+["suelo","¿Qué es el DOT?","Desarrollo Orientado al Transporte: alta densidad y usos mixtos alrededor de estaciones de TP masivo, a menos de 800 m caminables, desincentivando el auto."],
+["suelo","Rasgos del desarrollo disperso","Baja densidad, usos separados, dependencia del auto, consumo de tierra, infraestructura más cara y más emisiones."],
+["paradigma","Las 3 perspectivas de Litman","Tránsito (vehículos), movilidad (personas y bienes) y accesibilidad (capacidad de llegar a bienes, servicios y actividades)."],
+["paradigma","¿Qué unidad de medida refleja cada perspectiva?","veh-km: tránsito. pas-km: movilidad. Viajes, tiempo de viaje y costo generalizado: acceso."],
+["paradigma","¿Qué patrón de uso del suelo favorece la perspectiva de tránsito?","Desarrollo periférico de baja densidad, dependiente del auto."],
+["paradigma","Ejemplo RU: la caminata en distancia vs viajes","3% de la distancia, 18% del tiempo y 25% de los viajes. Medir en km invisibiliza a los modos activos."],
+["paradigma","Etapas de la ingeniería de tránsito","Antes de 1920 ciudad compacta; 1920-1950 aparece el auto y se adapta; desde 1950 ciudad orientada al auto; hoy ciudad vivible con modos sustentables priorizados."],
+["modal","4 grupos de criterios de elección modal","Características del usuario, del viaje, urbanas y del vehículo."],
+["modal","Los 5 pilares del PMS 2030","Sustentable, accesible, metropolitana, segura y personalizada."],
+["modal","Las 5 estrategias del PMS 2030","Hacer más atractivo el TP, potenciar la intermodalidad, desarrollar los modos activos, compartir la calle, organizar la logística."],
+["modal","Pilar movilidad accesible: acción y desafíos","Facilitar el acceso de todas las personas a bienes y servicios urbanos. Desafíos: acceso equitativo; desplazarse eficaz y seguro sin importar la condición; evitar exclusión y pérdida de oportunidades."],
+["modal","¿Qué es MaaS?","Movilidad como servicio: movilidad sin costuras que integra servicios, información y formas de pago. Pertenece al pilar movilidad personalizada."],
+["modal","Dimensiones de la movilidad sustentable","Desarrollo económico (eficacia y eficiencia), equidad, protección del ambiente y recursos, y gestión."],
+["modal","4 ejes de acción de la movilidad sustentable","Patrones compactos, priorizar TP, desalentar el auto, promover modos no motorizados."],
+["pet","¿Qué es la conectividad en el planeamiento territorial?","Un atributo de las vinculaciones (infraestructura y servicios) entre lugares, descripto por cantidad de conexiones y capacidades."],
+["pet","Las 4 ideas rectoras del modelo deseado del PET","A integración nacional e internacional; B fortalecimiento o reconversión productiva; C conectividad interna; D sistema policéntrico de ciudades."],
+["demanda","¿Por qué la demanda de transporte es derivada?","Porque no es un fin en sí misma: se viaja para hacer actividades en el destino y los bienes ganan valor al trasladarse."],
+["demanda","Diferencia entre P/A y O/D","P/A: el hogar es siempre la producción. O/D: sigue el sentido real del viaje. En viajes no basados en el hogar coinciden."],
+["demanda","Fórmula de accesibilidad de una zona","Acc_i = Σ A_j · F_ij: suma de atracciones de las demás zonas ponderadas por el factor de fricción."],
+["demanda","Métodos de generación de viajes","Factor de crecimiento, regresión lineal múltiple y clasificación cruzada (análisis de categorías)."],
+["demanda","¿Qué significan BHT, BHE, BHC, BHO, NBH?","Basado en el hogar: trabajo, estudio, compras, otros. NBH: no basado en el hogar."],
+["planeamiento","Definición formal de planeamiento del transporte","Proceso sistémico, integral, racional y continuo de previsión, organización y uso de los recursos para lograr objetivos y metas en un tiempo y espacio prefijados."],
+["planeamiento","Objetivo vs meta vs política vs programa vs proyecto","Objetivo: fin general. Meta: paso hacia el objetivo. Política: norma de decisión. Programa: actividades relacionadas. Proyecto: unidad autónoma de inversión."],
+["planeamiento","¿Por qué casi todo se transporta en camión en Argentina?","Poca carga, estacional y viajes cortos. FFCC y fluvial son más baratos por km pero requieren transbordos, que cuestan más que el transporte."],
+["planeamiento","Clave de la viabilidad del FFCC de carga","La densidad de tráfico (t-km / km de red). Argentina: 0,80, la más baja de la región."],
+["planeamiento","Cambio en la cantidad demandada vs cambio en la función demanda","Cantidad: movimiento sobre la curva, corto plazo. Función: desplazamiento de la curva por crecimiento poblacional o económico, largo plazo."],
+["planeamiento","Factores de inducción y de disuasión de la demanda","Inducción: población, ingreso, usos del suelo, actividad. Disuasión: costo, tiempo, incomodidad, inseguridad, mal tiempo."],
+["planeamiento","Origen del modelo de 4 etapas","Chicago Area Transportation Study, 1960."],
+["planeamiento","Modelos macro vs micro","Macro (EMME, TransCAD, Visum): demanda entre zonas y escenarios futuros. Micro: capacidad, colas e intersecciones."],
+["planeamiento","Objetivos del Estado al regular","Siempre: seguridad, preservar la infraestructura, proteger el ambiente. A veces: objetivos económicos."],
+["planeamiento","¿Qué porcentaje del suelo urbano ocupa el transporte?","Entre el 20 y el 40%. El espacio es el activo más valioso de una ciudad."],
+["planeamiento","Funciones de las vías urbanas","Ambiental, social, accesibilidad (peatonal y vehicular) y tránsito."],
+["espacio","Randstad: modelo del Plan del Oeste 1958","Descentralización concentrada."],
+["espacio","¿Qué fue el plan VINEX (1991)?","Plan nacional holandés de nuevos barrios vinculados al transporte (ej. Almere, Leidsche Rijn)."],
+["espacio","Visión 5+2 del corredor norte de Barcelona","5 conectores transversales y 2 calles metropolitanas."],
+["espacio","Ejes verdes de Barcelona: números","21 calles (33 km), 21 plazas (3,9 ha), +33,4 ha peatonales, 6,6 ha de verde, proximidad de 200 m."],
+["espacio","Bus ortogonal de Barcelona","Red de 2015 con líneas H (horizontales), V (verticales) y D (diagonales) que se cruzan para trasbordar."],
+["espacio","Plaza de las Glòries","Pasó de nudo vial a parque: proyecto Canopia urbana (2014)."],
+["its","Definición de ITS","Integración de tecnologías avanzadas de comunicaciones en la infraestructura y en los vehículos para mejorar movilidad y seguridad."],
+["its","Las 4 funciones de un ITS","Detectar, comunicar, procesar y gestionar."],
+["its","ATMS vs ATIS","ATMS gestiona la red (incidentes, semáforos, peajes). ATIS informa al viajero antes y durante el viaje."],
+["its","¿Qué es AHS?","Sistema automatizado de carreteras: el conductor cede todo el control. Es la máxima expresión del AVCS."],
+["its","Objetivo principal del SAI de AUSOL (1998)","Mejorar la seguridad vial; complementario, el nivel de servicio."],
+["its","¿Qué es DSRC?","Comunicaciones dedicadas de corto alcance, uni o bidireccionales; por ejemplo, para evitar colisiones en intersecciones."]
+];
+
+const QZ = [
+["conceptos","Según Vasconcellos, la accesibilidad es…",["La velocidad media de la red","La facilidad de llegar a los destinos anhelados","La cantidad de veh-km recorridos","La capacidad de una vía en hora pico"],1,"Definición de la clase 09. Es la medida más directa de los efectos de un sistema de transporte."],
+["conceptos","La asequibilidad corresponde a la perspectiva…",["Espacial","Social","Microaccesibilidad","De tránsito"],1,"Perspectiva social: oportunidades de usar el sistema; medida en costos monetarios = asequibilidad."],
+["conceptos","¿Cuál NO es una de las 8 externalidades negativas de la lámina?",["Sedentarismo","Fragmentación territorial","Revalorización del suelo","Biodiversidad"],2,"La revalorización por una nueva parada es el ejemplo de externalidad positiva."],
+["conceptos","Pasar del auto al TP y la micromovilidad corresponde al principio…",["Evitar","Cambiar","Mejorar","Regular"],1,"Cambiar = shift modal. Evitar = menos viajes por proximidad; Mejorar = eficiencia tecnológica."],
+["ecosistema","En el modelo de McLoughlin, la red de transporte (vías, puentes, terminales) son…",["Actividades","Espacios","Comunicaciones","Canales"],3,"Las comunicaciones fluyen a través de canales."],
+["ecosistema","Las comunicaciones respecto de la separación espacial son…",["Sólo consecuencia","Sólo prerrequisito","Consecuencia y prerrequisito","Independientes"],2,"Relación recíproca."],
+["suelo","¿Cuál NO es principio del Código Urbanístico de CABA?",["Ciudad policéntrica","Ciudad plural","Ciudad lineal","Ciudad saludable"],2,"Los 5 son: integrada, policéntrica, plural, saludable, diversa. Lineal es un modelo de desarrollo urbano."],
+["suelo","Curitiba es el ejemplo típico de desarrollo urbano…",["Satélite","Lineal","Disperso","Regenerativo"],1,"Corredores de buses que estructuran el crecimiento a lo largo de ejes."],
+["suelo","En el DOT, la distancia caminable clave a la estación es…",["Menos de 200 m","Menos de 800 m","Menos de 2 km","Menos de 5 km"],1,"Clase 10: distancias menores a 800 m para promover caminatas. (Los 200 m son la proximidad de los ejes verdes de Barcelona; los 400 m, el radio del TP4.)"],
+["paradigma","Medir en pasajeros-km refleja la perspectiva de…",["Tránsito","Movilidad","Accesibilidad","Equidad"],1,"veh-km → tránsito; pas-km → movilidad; viajes, tiempo y costo generalizado → acceso."],
+["paradigma","La perspectiva de tránsito tiende a favorecer…",["Usos mixtos y compactos","Desarrollo periférico de baja densidad","Teletrabajo","Modos activos"],1,"Mide velocidad y volumen vehicular → autopistas → dependencia del auto."],
+["paradigma","¿Qué unidad da igual valor a auto, TP, bici, caminata y teletrabajo?",["veh-km","pas-km","Viajes","t-km"],2,"Los viajes reflejan la perspectiva de acceso."],
+["modal","¿Cuál de estos es un pilar del PMS 2030 (y no una estrategia)?",["Compartir la calle","Movilidad metropolitana","Organizar la logística","Potenciar la intermodalidad"],1,"Pilares: sustentable, accesible, metropolitana, segura, personalizada."],
+["modal","MaaS se asocia al pilar…",["Segura","Personalizada","Sustentable","Metropolitana"],1,"Personalizada: tecnología para servicios combinables, sin costuras."],
+["modal","“% del gasto en transporte del ingreso del estrato bajo” es indicador de…",["Eficacia","Eficiencia","Equidad","Gestión"],2,"Equidad = distribución de la accesibilidad."],
+["modal","Densidad de CABA según la lámina comparativa",["5.100 hab/km²","15.150 hab/km²","500 hab/km²","16,8 hab/km²"],1,"BCN 5.100; Países Bajos ~500; Argentina 16,8."],
+["pet","La idea rectora D del PET es…",["Conectividad interna","Sistema policéntrico de ciudades","Reconversión productiva","Integración internacional"],1,"A integración, B productiva, C conectividad interna, D policéntrico."],
+["demanda","Un viaje del trabajo al cine se clasifica como…",["BHT","BHO","NBH","BHC"],2,"No tiene un extremo en el hogar."],
+["demanda","Volver del trabajo a casa: ¿cómo queda en P/A y en O/D (hogar = A, trabajo = B)?",["P/A = AB, O/D = AB","P/A = BA, O/D = BA","P/A = AB, O/D = BA","P/A = BA, O/D = AB"],2,"En P/A el hogar siempre produce; en O/D se respeta el sentido."],
+["demanda","En Acc_i = Σ A_j F_ij, un factor de fricción mayor implica…",["Menor accesibilidad","Mayor accesibilidad","No influye","Más congestión"],1,"Lámina: a mayor factor, mayor accesibilidad."],
+["demanda","El EPTRM usa el método de…",["Factor de crecimiento","Regresión lineal","Clasificación cruzada","Gravitacional"],2,"Por NSE, posesión de auto y nivel de accesibilidad."],
+["planeamiento","El modelo de 4 etapas se desarrolló en…",["Londres, 1950","Chicago, 1960","Madrid, 1971","Curitiba, 1974"],1,"Chicago Area Transportation Study."],
+["planeamiento","Un desplazamiento de la curva de demanda por crecimiento poblacional es un cambio…",["En la cantidad demandada, de corto plazo","En la función demanda, de largo plazo","En la oferta","De ramp-up"],1,"El ramp-up es un movimiento sobre la misma curva."],
+["planeamiento","Porcentaje de cargas interurbanas por camión en Argentina",["50%","75%","93%","99%"],2,"93%; el resto se reparte entre FFCC (24 Mt) y fluvial (1,4 Mt)."],
+["planeamiento","Para el Estado, ¿qué objetivo de regulación es sólo “a veces”?",["Seguridad","Preservar infraestructura","Proteger el ambiente","Económicos"],3,"Los tres primeros son SIEMPRE."],
+["planeamiento","EMME, TransCAD y Visum son modelos…",["Micro","Macro","De capacidad (HCM)","De generación ITE"],1,"Modelos macro de demanda entre zonas."],
+["planeamiento","¿Cuál es la secuencia correcta?",["Distribución → generación → asignación → modal","Generación → distribución → división modal → asignación","Generación → división modal → distribución → asignación","Asignación → generación → distribución → modal"],1,"¿Cuántos? ¿Hacia dónde? ¿En qué modo? ¿Por dónde?"],
+["espacio","El modelo de “descentralización concentrada” corresponde a…",["Plan Cerdà 1859","Plan del Oeste de Países Bajos 1958","Plan VINEX 1991","Superilles"],1,"Werkcommissie Westen des lands, 1958."],
+["espacio","La visión 5+2 del corredor norte de Barcelona propone…",["5 líneas de metro y 2 de tranvía","5 conectores transversales y 2 calles metropolitanas","5 superilles y 2 parques","5 autopistas y 2 rondas"],1,""],
+["espacio","El Plan de Nuevas Centralidades de Barcelona (1987) es de…",["Cerdà","Joan Busquets","Salvador Rueda","Lola Domènech"],1,"Busquets. Cerdà = Ensanche 1859; Rueda = superilles; Domènech = Pg. Sant Joan."],
+["espacio","Las líneas H, V y D de Barcelona son parte de…",["Tram Diagonal","Red de bus ortogonal","Metro","Bicing"],1,"Red ortogonal de 2015."],
+["its","¿Qué sistema brinda información al viajero antes y durante el viaje?",["ATMS","ATIS","AVCS","CVO"],1,"Advanced Traveler Information Systems."],
+["its","WIM (peso en movimiento) se asocia a…",["APTS","CVO","ARTS","AHS"],1,"Operación de vehículos comerciales."],
+["its","Secuencia funcional de un ITS",["Procesar → detectar → gestionar → comunicar","Detectar → comunicar → procesar → gestionar","Comunicar → detectar → gestionar → procesar","Gestionar → procesar → comunicar → detectar"],1,""],
+["its","El objetivo principal del SAI de AUSOL era…",["Cobrar peaje","Seguridad vial","Reducir emisiones","Informar tarifas"],1,"El nivel de servicio era complementario."]
+];
+
+/* ---------- estado ---------- */
+const store={get(k,d){try{const v=localStorage.getItem("itmu."+k);return v?JSON.parse(v):d}catch(e){return d}},set(k,v){try{localStorage.setItem("itmu."+k,JSON.stringify(v))}catch(e){}}};
+let cur=store.get("mod","conceptos"), done=new Set(store.get("done",[])), known=store.get("known",{});
+const $=s=>document.querySelector(s);
+const modById=id=>M.find(m=>m.id===id);
+
+/* ---------- vistas ---------- */
+function show(v){
+  document.querySelectorAll(".view").forEach(x=>x.hidden=x.id!=="v-"+v);
+  document.querySelectorAll("nav.tabs button").forEach(b=>b.setAttribute("aria-selected",b.dataset.v===v));
+  store.set("view",v);
+}
+document.querySelectorAll("nav.tabs button").forEach(b=>b.onclick=()=>{$("#q").value="";show(b.dataset.v)});
+
+/* ---------- estudiar ---------- */
+function renderRoute(){
+  $("#route").innerHTML=M.map((m,i)=>`<li class="${done.has(m.id)?"done":""} ${m.id===cur?"cur":""}" style="--c:${m.c}"><button data-m="${m.id}"><span class="stop">${done.has(m.id)?"":i+1}</span><span><span class="st-name">${m.t}</span><span class="st-src">${m.src}</span></span></button></li>`).join("");
+  document.querySelectorAll("#route button").forEach(b=>b.onclick=()=>{cur=b.dataset.m;store.set("mod",cur);renderModule();window.scrollTo({top:0})});
+}
+function renderModule(hl){
+  const m=modById(cur), i=M.indexOf(m);
+  const mark=t=>hl?t.replace(new RegExp("(>[^<]*?)("+hl.replace(/[.*+?^${}()|[\]\\]/g,"\\$&")+")","gi"),"$1<mark>$2</mark>"):t;
+  $("#module").style.setProperty("--c",m.c);
+  $("#module").innerHTML=`<div class="mhead"><div class="eyebrow">Módulo ${i+1} de ${M.length} · ${m.src}</div><h1>${m.t}</h1><p>${m.intro}</p></div>`+
+   m.s.map(([h,b])=>`<div class="sec"><h2>${h}</h2>${mark(">"+b).slice(1)}</div>`).join("")+
+   `<div class="mfoot"><button class="btn" id="prevm" ${i===0?"disabled":""}>← Anterior</button><button class="btn ${done.has(m.id)?"":"pri"}" id="donem">${done.has(m.id)?"Marcado como repasado ✓":"Marcar como repasado"}</button><button class="btn" id="nextm" ${i===M.length-1?"disabled":""}>Siguiente →</button></div>`;
+  $("#prevm").onclick=()=>{cur=M[i-1].id;store.set("mod",cur);renderModule();scrollTo({top:0})};
+  $("#nextm").onclick=()=>{cur=M[i+1].id;store.set("mod",cur);renderModule();scrollTo({top:0})};
+  $("#donem").onclick=()=>{done.has(m.id)?done.delete(m.id):done.add(m.id);store.set("done",[...done]);renderModule()};
+  renderRoute();
+}
+
+/* ---------- tarjetas ---------- */
+let fcList=[],fcI=0,flipped=false;
+function modOptions(sel,all){sel.innerHTML=`<option value="">${all}</option>`+M.map(m=>`<option value="${m.id}">${m.t}</option>`).join("")}
+function buildFc(){
+  const f=$("#fc-mod").value, p=$("#fc-pend").checked;
+  fcList=FC.map((c,i)=>({c,i})).filter(o=>(!f||o.c[0]===f)&&(!p||known[o.i]!==true));
+  fcI=0;flipped=false;drawFc();
+}
+function drawFc(){
+  const n=fcList.length, k=FC.filter((_,i)=>known[i]===true).length;
+  $("#fc-bar").style.width=(100*k/FC.length)+"%";
+  $("#fc-known").textContent=`${k} de ${FC.length} tarjetas marcadas como sabidas`;
+  if(!n){$("#card").innerHTML=`<div class="empty">No quedan tarjetas con este filtro. Destildá “solo las que marqué para repasar” o elegí otro tema.</div>`;$("#fc-count").textContent="";return}
+  const o=fcList[fcI], m=modById(o.c[0]);
+  $("#card").style.setProperty("--c",m.c);
+  $("#fc-count").textContent=`${fcI+1} / ${n}`;
+  $("#card").innerHTML=`<div class="eyebrow">${m.t}${known[o.i]===true?" · la sabés":known[o.i]===false?" · a repasar":""}</div><div class="q">${o.c[1]}</div>${flipped?`<div class="a">${o.c[2]}</div>`:""}<div class="hint">${flipped?"Marcá si la sabías":"Tocá la tarjeta o apretá espacio para ver la respuesta"}</div>`;
+}
+function stepFc(d){if(!fcList.length)return;fcI=(fcI+d+fcList.length)%fcList.length;flipped=false;drawFc()}
+function markFc(v){if(!fcList.length)return;known[fcList[fcI].i]=v;store.set("known",known);if($("#fc-pend").checked&&v){fcList.splice(fcI,1);if(fcI>=fcList.length)fcI=0;flipped=false;drawFc()}else stepFc(1)}
+$("#card").onclick=()=>{flipped=!flipped;drawFc()};
+$("#fc-prev").onclick=()=>stepFc(-1);$("#fc-next").onclick=()=>stepFc(1);
+$("#fc-yes").onclick=()=>markFc(true);$("#fc-no").onclick=()=>markFc(false);
+$("#fc-shuf").onclick=()=>{for(let i=fcList.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[fcList[i],fcList[j]]=[fcList[j],fcList[i]]}fcI=0;flipped=false;drawFc()};
+$("#fc-mod").onchange=buildFc;$("#fc-pend").onchange=buildFc;
+document.addEventListener("keydown",e=>{if($("#v-tarjetas").hidden||e.target.tagName==="INPUT"||e.target.tagName==="SELECT")return;
+  if(e.key===" "){e.preventDefault();flipped=!flipped;drawFc()}else if(e.key==="ArrowRight")stepFc(1);else if(e.key==="ArrowLeft")stepFc(-1)});
+
+/* ---------- quiz ---------- */
+let qz=[],qi=0,qok=0,answered=false;
+function buildQz(){
+  const f=$("#qz-mod").value;
+  qz=QZ.filter(q=>!f||q[0]===f).map(q=>q.slice());
+  for(let i=qz.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[qz[i],qz[j]]=[qz[j],qz[i]]}
+  qi=0;qok=0;answered=false;drawQz();
+}
+function drawQz(){
+  if(qi>=qz.length){
+    const pct=qz.length?Math.round(100*qok/qz.length):0;
+    $("#qz-count").textContent="";
+    $("#qz").innerHTML=`<div class="qbox"><div class="eyebrow">Resultado</div><div class="score">${qok} / ${qz.length}</div><p>${pct>=80?"Muy bien. Pasá a las tarjetas para reforzar lo que dudaste.":pct>=50?"Vas bien. Repasá los módulos donde fallaste y volvé a intentar.":"Conviene releer los módulos en “Estudiar” y repetir."}</p><button class="btn pri" id="qz-again">Hacer otra vuelta</button></div>`;
+    $("#qz-again").onclick=buildQz;return}
+  const q=qz[qi], m=modById(q[0]);
+  $("#qz-count").textContent=`Pregunta ${qi+1} de ${qz.length} · ${qok} correctas`;
+  $("#qz").innerHTML=`<div class="qbox" style="border-top:6px solid ${m.c}"><div class="eyebrow">${m.t}</div><h3>${q[1]}</h3><div class="opts">${q[2].map((o,k)=>`<button class="opt" data-k="${k}">${o}</button>`).join("")}</div><div id="qz-exp"></div></div>`;
+  answered=false;
+  document.querySelectorAll(".opt").forEach(b=>b.onclick=()=>{
+    if(answered)return;answered=true;const k=+b.dataset.k;
+    document.querySelectorAll(".opt").forEach(x=>{x.disabled=true;if(+x.dataset.k===q[3])x.classList.add("right")});
+    if(k===q[3])qok++;else b.classList.add("wrong");
+    $("#qz-exp").innerHTML=`<div class="exp"><b>${k===q[3]?"Correcto.":"Incorrecto."}</b> ${q[4]||""}</div><div class="mfoot"><span></span><button class="btn pri" id="qz-n">${qi+1<qz.length?"Siguiente pregunta →":"Ver resultado"}</button></div>`;
+    $("#qz-n").onclick=()=>{qi++;drawQz()};
+  });
+}
+$("#qz-mod").onchange=buildQz;$("#qz-restart").onclick=buildQz;
+
+/* ---------- TP4 ---------- */
+$("#v-tp4").innerHTML=`
+<div class="mhead" style="--c:#b8336a"><div class="eyebrow">Trabajo Práctico N° 4 · entrega 16/11</div><h1>Movilidad sostenible, accesibilidad y transporte</h1><p>Grupo 11: pilar <b>Movilidad accesible</b> y estrategia <b>Desarrollar los modos activos</b>. Abajo está cada consigna con lo que hay que poder explicar.</p></div>
+
+<div class="sec"><h2>1. Accesibilidad en ciudades: transporte y forma urbana <span class="tag">Paper LSE Cities 2014</span></h2>
+<p>Rode, Floater et al., “Accessibility in cities: transport and urban form”, NCE Cities Paper 03. Idea central: <b>moverse no es el fin, el fin es acceder</b>. La movilidad es sólo uno de los medios.</p>
+<div class="tw"><table><tr><th>Acceso por proximidad</th><th>Acceso por movimiento</th></tr>
+<tr><td>Orígenes y destinos cerca; ciudad compacta, densa, mixta; viajes cortos a pie, en bici o en TP</td><td>La distancia se compensa con velocidad; ciudad dispersa con usos separados; viajes largos y dependencia del auto</td></tr></table></div>
+<ul><li>El <b>TP necesita densidad</b>: sin demanda concentrada no hay frecuencia ni recaudación. El <b>auto necesita espacio</b>: calzadas y estacionamiento consumen suelo y dispersan la ciudad.</li>
+<li>Ciudad compacta + transporte sostenible → más productividad, más salud y seguridad, más equidad, menos CO₂.</li>
+<li><b>Barreras al cambio</b>: intereses de los sectores automotriz, construcción e inmobiliario; preferencia por el auto propio y la vida suburbana; altos costos del cambio; barreras institucionales.</li></ul>
+<div class="key"><b>Método para cada figura (lo pide la consigna)</b>: 1) identificar las variables de cada eje; 2) describir la forma funcional; 3) explicar por qué tiene esa forma; 4) vincularlo con una idea del artículo.</div>
+<div class="tw"><table><tr><th>Figura</th><th>Lectura esperada</th></tr>
+<tr><td><b>Fig. 4</b> Emisiones por pasajero-km por modo</td><td>Eje: modo vs gCO₂/pkm. El auto (sobre todo con baja ocupación) emite varias veces más por pkm que bus, tranvía o metro; caminar y bici emiten cero. Explicación: el consumo se reparte entre muchos pasajeros en el TP. Vínculo: “Cambiar” y priorizar TP y modos no motorizados.</td></tr>
+<tr><td><b>Fig. 5</b> Densidad media vs emisiones per cápita</td><td>Eje X densidad (hab/ha), eje Y CO₂ del transporte per cápita. Relación decreciente y no lineal (tipo hipérbola): a baja densidad las emisiones se disparan (ciudades norteamericanas), a alta densidad se estabilizan en valores bajos (ciudades asiáticas y europeas). Explicación: distancias cortas y TP viable con densidad. Vínculo: “el TP requiere densidad, el auto requiere espacio”.</td></tr>
+<tr><td><b>Fig. 12</b> Partición modal</td><td>Comparación del reparto modal entre ciudades: las compactas tienen mayor participación de caminata, bici y TP; las dispersas, del auto. Vínculo: proximidad vs movimiento; forma urbana y transporte van juntos.</td></tr></table></div>
+<div class="tip">La descripción exacta de cada figura la tenés que verificar en el paper. Lo de arriba es la lectura típica que el docente espera, no está copiado de las figuras.</div></div>
+
+<div class="sec"><h2>2.1 Pilar y estrategia del PMS 2030 <span class="tag">Grupo 11</span></h2>
+<p><b>a) Pilar: Movilidad accesible.</b> Acción que lo caracteriza: <b>facilitar el acceso de todas las personas a los bienes y servicios urbanos</b>. Desafíos: garantizar un acceso equitativo a los bienes y servicios de la ciudad; poder desplazarse de manera eficaz y segura sin importar la condición particular de la persona; evitar la exclusión y la pérdida de oportunidades.</p>
+<p><b>b) Estrategia: Desarrollar los modos activos.</b> Objetivo estratégico: <b>mejorar las condiciones y tiempos de viaje para hacer más atractivos los modos activos</b> (caminata y bicicleta).</p>
+<div class="key"><b>Estructura que pide la consigna</b>: Pilar (visión, con acción y desafíos) → Estrategia (línea de acción) → Objetivo estratégico (hacia dónde) → <b>Meta (cuánto y para cuándo: medible y con plazo)</b>.</div>
+<div class="tip">La meta cuantitativa de la estrategia no está en el material de clase que subiste. Buscala en el capítulo de estrategias del PMS 2030 y tenela anotada con su número y año.</div>
+<p><b>Para conectar ambos en la exposición</b>: los modos activos son los más baratos y los más equitativos (no requieren auto ni pasaje), por eso la estrategia sirve al pilar accesible. Pero sólo cumplen ese rol si las veredas, cruces y rampas son accesibles para personas con movilidad reducida (microaccesibilidad).</p></div>
+
+<div class="sec"><h2>2.2 Modos según distancia (pág. 47)</h2>
+<div class="distbar"><div class="d-act"><b>82%</b>1 km<br>modos activos</div><div class="d-tp"><b>56%</b>5 km<br>transporte público</div><div class="d-eq"><b>≈</b>10 km<br>equilibrio TP / auto</div><div class="d-auto"><b>59%</b>15 km<br>auto particular</div><div class="d-auto"><b>75%</b>20 km<br>auto particular</div></div>
+<p><b>a)</b> A medida que crece la distancia, la elección pasa de los modos activos al TP y luego al auto. Hasta ~1 km domina la caminata y la bici; a 5 km el TP; cerca de 10 km se equilibran TP y auto; desde 15 km predomina el auto.</p>
+<p><b>b) Otros factores</b>: del usuario (ingreso, auto disponible, edad, movilidad reducida), del viaje (motivo, horario, costo, tiempo, cadena de viaje) y del entorno y la oferta (frecuencia, confort, infraestructura, seguridad, estacionamiento). Son los 4 grupos de criterios de la clase.</p></div>
+
+<div class="sec"><h2>2.3 Indicador de accesibilidad al TP (pág. 49)</h2>
+<p>Es un índice que mide, para cada punto o zona de la ciudad, <b>qué tan fácil es acceder a la red de transporte público</b>, combinando la cercanía a las paradas o estaciones (distancia caminando) con la oferta disponible en ellas (cantidad de líneas o modos y frecuencia). Es análogo al PTAL que usa Londres.</p>
+<p>El mapa permite ver qué zonas tienen accesibilidad alta (el centro y los corredores de subte y tren) y cuáles baja (sobre todo en el sur y la periferia), y por lo tanto dónde hay inequidad en el acceso. Esto conecta con el pilar accesible.</p>
+<div class="tip">Confirmá en el plan cómo se calcula exactamente y qué categorías usa el mapa. La lámina de clase sólo plantea la pregunta.</div></div>
+
+<div class="sec"><h2>3.1 Nodo de trasbordo (estación del AMBA)</h2>
+<p><b>Nodo de trasbordo</b>: lugar donde los viajes cambian de modo (tren, colectivo, subte, bici, a pie). Su calidad define cuánto cuesta, en tiempo y esfuerzo, la intermodalidad.</p>
+<ul><li><b>a) Relevamiento y elección modal</b>: listar todos los modos que llegan y aplicar los criterios (usuario, viaje, entorno).</li>
+<li><b>b) Entorno para modos activos</b>: veredas anchas y continuas, cruces seguros y rampas, ciclovías y bicicleteros, iluminación y sombra.</li>
+<li><b>c) Perfil transversal</b> con tres criterios: <b>convivencia modal</b> (asignar el ancho por prioridad: peatón, bici, TP y al final el auto), <b>accesibilidad universal</b> (veredas continuas, rampas, cruces a nivel, paradas accesibles) y <b>pacificación</b> (calzadas más angostas, plataforma única, orejas en las esquinas, arbolado). Referencia: Manual de Diseño Urbano GCBA 2026.</li>
+<li><b>d) Radio de 400 m</b> (≈ 5 min a pie): ver si el Código Urbanístico permite densidad y mezcla de usos (C comercial, R residencial, E equipamiento) cerca de la estación y qué restricciones impone (APH). Es la lógica DOT.</li>
+<li><b>e) Externalidad negativa</b>: elegir una sola (congestión, ruido, contaminación, siniestros, ocupación del espacio) y proponer una mitigación concreta.</li></ul></div>
+
+<div class="sec"><h2>3.2 Supermanzana 3×3 en la grilla porteña</h2>
+<ul><li><b>Perímetro</b>: absorbe el tránsito pasante y los colectivos desviados (hay que identificar las líneas actuales y dibujar los nuevos recorridos).</li>
+<li><b>Interior</b>: calles pacificadas con sentidos de circulación que impiden atravesar la supermanzana (sólo se entra y se sale por el mismo lado).</li></ul>
+<div class="tw"><table><tr><th>Beneficios</th><th>Conflictos a mitigar</th></tr>
+<tr><td>Espacio público y verde; menos ruido y emisiones; seguridad vial; vida de barrio</td><td>Carga y descarga (ventanas horarias, dársenas en el perímetro o en esquinas); garajes y frentistas (acceso permitido a baja velocidad); emergencias (paso libre garantizado); colectivos desviados (paradas en el perímetro a distancia caminable)</td></tr></table></div>
+<p class="counter">Barrios sugeridos por la cátedra: Balvanera, San Cristóbal, Almagro.</p></div>`;
+
+/* ---------- búsqueda ---------- */
+const strip=h=>h.replace(/<[^>]+>/g," ").replace(/\s+/g," ");
+const norm=t=>t.normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase();
+$("#q").addEventListener("input",e=>{
+  const q=e.target.value.trim();
+  if(q.length<2){show(store.get("view","estudiar"));return}
+  document.querySelectorAll(".view").forEach(x=>x.hidden=x.id!=="v-buscar");
+  const nq=norm(q),hits=[];
+  M.forEach(m=>m.s.forEach(([h,b])=>{const t=strip(b),nt=norm(t),p=nt.indexOf(nq);if(p>=0||norm(h).includes(nq)){const s=Math.max(0,p-60);hits.push({m,h,snip:(s?"…":"")+t.slice(s,s+170)+"…"})}}));
+  FC.forEach(c=>{if(norm(c[1]+" "+c[2]).includes(nq))hits.push({m:modById(c[0]),h:"Tarjeta: "+c[1],snip:c[2]})});
+  $("#results").innerHTML=`<p class="counter">${hits.length} resultado${hits.length===1?"":"s"} para “${q.replace(/</g,"&lt;")}”</p>`+(hits.length?hits.map((x,i)=>`<div class="hit" data-i="${i}" tabindex="0"><small>${x.m.t}</small><div><b>${x.h}</b></div><div>${x.snip}</div></div>`).join(""):`<div class="empty">Nada con ese término. Probá con otra palabra.</div>`);
+  document.querySelectorAll(".hit").forEach(el=>el.onclick=()=>{const x=hits[+el.dataset.i];cur=x.m.id;store.set("mod",cur);$("#q").value="";show("estudiar");renderModule(q);scrollTo({top:0})});
+});
+
+/* ---------- init ---------- */
+modOptions($("#fc-mod"),"Todos los temas");modOptions($("#qz-mod"),"Todos los temas");
+if(!modById(cur))cur="conceptos";
+renderModule();buildFc();buildQz();show(store.get("view","estudiar"));
+</script>
+
+</body>
+</html>
